@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Konglomerat — My Report</title>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+  <div id="header"></div>
+
+  <div class="app-shell">
+    <aside class="sidebar" id="side"></aside>
+
+    <main class="workspace">
+      <div class="page-title"><div><h1 data-i18n="co.myReport">Мой месячный отчёт</h1></div></div>
+
+      <div class="card">
+        <div class="grid cols-4">
+          <div class="stat-tile"><div class="s-num">$48K</div><div class="s-lbl">Revenue</div></div>
+          <div class="stat-tile"><div class="s-num">186</div><div class="s-lbl">Orders</div></div>
+          <div class="stat-tile"><div class="s-num">+22%</div><div class="s-lbl">Growth</div></div>
+          <div class="stat-tile"><div class="s-num">4.8★</div><div class="s-lbl">Rating</div></div>
+        </div>
+        <hr class="hr" />
+        <p class="muted" data-i18n="co.reportDesc">Просмотрите индивидуальный месячный отчёт этой компании.</p>
+        <button class="btn btn-primary mt-2" id="reportBtn" data-i18n="co.viewReport">Открыть отчёт</button>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/main.js"></script>
+  <script>
+    requireRole("company");
+    document.getElementById("header").innerHTML = buildHeader({
+      root: "../", nav: "",
+      right: `<button class="btn btn-soft btn-sm" onclick="logout()" data-i18n="btn.logout">Выйти</button>`
+    });
+    document.getElementById("side").innerHTML = buildCompanySidebar("report");
+
+    document.getElementById("reportBtn").addEventListener("click", async () => {
+      try {
+        await api("/api/reports/generate", { method:"POST" });
+        toast(t("co.myReport"), K.lang==='uz'?"Hisobot tayyor ✓":K.lang==='en'?"Report ready ✓":"Отчёт готов ✓", "success");
+      } catch { toast(t("login.err.title"), "", "error"); }
+    });
+
+    boot();
+  </script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Konglomerat — Modules</title>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+  <div id="header"></div>
+
+  <div class="app-shell">
+    <aside class="sidebar" id="side"></aside>
+
+    <main class="workspace">
+      <div class="page-title">
+        <div>
+          <h1 data-i18n="modules.title">Модули управления</h1>
+          <div class="sub" data-i18n="modules.sub">13 блоков · 100 модулей.</div>
+        </div>
+      </div>
+      <div id="moduleAccordion"></div>
+    </main>
+  </div>
+
+  <script src="../js/main.js"></script>
+  <script>
+    requireRole("admin");
+    document.getElementById("header").innerHTML = buildHeader({
+      root: "../", nav: "",
+      right: `<button class="btn btn-soft btn-sm" onclick="logout()" data-i18n="btn.logout">Выйти</button>`
+    });
+    document.getElementById("side").innerHTML = buildAdminSidebar("modules");
+
+    const BLOCKS = [
+      { icon:"cpu",       t:{uz:"AI Boshqaruv",ru:"AI Управление",en:"AI Management"}, n:8 },
+      { icon:"dollar",    t:{uz:"Investitsiya",ru:"Инвестиции",en:"Investment"}, n:8 },
+      { icon:"building",  t:{uz:"Kompaniyalar",ru:"Компании",en:"Companies"}, n:9 },
+      { icon:"flask",     t:{uz:"R&D",ru:"R&D",en:"R&D"}, n:7 },
+      { icon:"package",   t:{uz:"Eksport",ru:"Экспорт",en:"Export"}, n:8 },
+      { icon:"cap",       t:{uz:"Ta'lim",ru:"Образование",en:"Education"}, n:7 },
+      { icon:"tv",        t:{uz:"Media (Reportaj GO)",ru:"Медиа (Reportaj GO)",en:"Media (Reportaj GO)"}, n:8 },
+      { icon:"globe",     t:{uz:"Xalqaro Aloqalar",ru:"Междунар. связи",en:"Intl. Relations"}, n:7 },
+      { icon:"landmark",  t:{uz:"Hukumat",ru:"Правительство",en:"Government"}, n:8 },
+      { icon:"briefcase", t:{uz:"B2B",ru:"B2B",en:"B2B"}, n:8 },
+      { icon:"chart",     t:{uz:"Analitika",ru:"Аналитика",en:"Analytics"}, n:8 },
+      { icon:"grid",      t:{uz:"Smart Office",ru:"Smart Office",en:"Smart Office"}, n:7 },
+      { icon:"crown",     t:{uz:"Rahbariyat (Prezident Dashboard)",ru:"Руководство (Prezident Dashboard)",en:"Leadership (President Dashboard)"}, n:7 },
+    ];
+
+    let MODULES = {};
+    function renderModules() {
+      const L = K.lang;
+      document.getElementById("moduleAccordion").innerHTML = BLOCKS.map((b, bi) => {
+        const rows = Array.from({length: b.n}, (_, i) => {
+          const id = `m-${bi}-${i}`;
+          const on = MODULES[id] !== false;
+          return `<div class="module-row">
+            <span class="m-name">${b.t[L]} — ${L==='uz'?'modul':L==='en'?'module':'модуль'} ${i+1}</span>
+            <div class="m-actions">
+              <button class="btn btn-soft btn-sm" data-i18n="mod.settings">Настройки</button>
+              <label class="switch"><input type="checkbox" data-mod="${id}" ${on?"checked":""}><span class="slider"></span></label>
+            </div>
+          </div>`;
+        }).join("");
+        return `<div class="module-block ${bi===0?'open':''}">
+          <div class="mb-head">
+            <div class="mb-ico">${icon(b.icon, 20)}</div>
+            <div class="mb-titles"><b>${b.t[L]}</b>
+              <small>${b.n} ${L==='uz'?'modul':L==='en'?'modules':'модулей'}</small></div>
+            <span class="mb-count">${b.n}</span>
+            <span class="chev">▾</span>
+          </div>
+          <div class="mb-body">${rows}</div>
+        </div>`;
+      }).join("");
+      initAccordions();
+      document.querySelectorAll("[data-mod]").forEach(cb => {
+        cb.addEventListener("change", async () => {
+          try { await api("/api/modules/" + cb.dataset.mod, { method:"PUT", body:{ enabled: cb.checked } }); MODULES[cb.dataset.mod] = cb.checked; }
+          catch { cb.checked = !cb.checked; toast(t("login.err.title"), "", "error"); }
+        });
+      });
+    }
+    async function loadModules() { try { MODULES = await api("/api/modules"); } catch {} renderModules(); }
+
+    boot();
+    loadModules();
+    document.addEventListener("langchange", renderModules);
+  </script>
+</body>
+</html>

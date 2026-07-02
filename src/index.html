@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Konglomerat — National AI Business Operating System</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <!-- HEADER injected by JS -->
+  <div id="header"></div>
+
+  <!-- HERO -->
+  <section class="hero" id="top">
+    <div class="container">
+      <span class="eyebrow" data-i18n="hero.eyebrow">30 компаний · 1 платформа</span>
+      <h1>
+        <span data-i18n="hero.title1">Национальный</span>
+        <span class="grad" data-i18n="hero.title2">Konglomerat</span><br />
+        <span data-i18n="hero.title3">под управлением ИИ</span>
+      </h1>
+      <p class="lead" data-i18n="hero.lead">Единая экосистема, объединяющая 30 компаний под управлением Директора.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="login.html" data-i18n="hero.cta1">Войти в платформу</a>
+        <a class="btn btn-ghost" href="#showrooms" data-i18n="hero.cta2">Смотреть шоурумы</a>
+      </div>
+      <div class="hero-stats">
+        <div><div class="num">30</div><div class="lbl" data-i18n="stat.companies">Компаний</div></div>
+        <div><div class="num">100</div><div class="lbl" data-i18n="stat.modules">Модулей</div></div>
+        <div><div class="num">13</div><div class="lbl" data-i18n="stat.blocks">Блоков управления</div></div>
+        <div><div class="num">24/7</div><div class="lbl" data-i18n="stat.ai">AI-ассистент</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section class="section" id="about">
+    <div class="container">
+      <span class="eyebrow" data-i18n="about.eyebrow">О нас</span>
+      <h2 data-i18n="about.title">Концепция Konglomerat</h2>
+      <p class="section-sub" data-i18n="about.lead">Национальная цифровая платформа под единым управлением ИИ.</p>
+      <div class="grid cols-3 mt-3">
+        <div class="card">
+          <div class="card-ico" data-icon="control"></div>
+          <h3 data-i18n="about.c1.t">Единое управление</h3>
+          <p class="muted mt-1" data-i18n="about.c1.d">Директор управляет всеми компаниями с одной панели.</p>
+        </div>
+        <div class="card">
+          <div class="card-ico" data-icon="cpu"></div>
+          <h3 data-i18n="about.c2.t">AI-ядро</h3>
+          <p class="muted mt-1" data-i18n="about.c2.d">Каждый процесс оснащён ИИ-помощником.</p>
+        </div>
+        <div class="card">
+          <div class="card-ico" data-icon="globe"></div>
+          <h3 data-i18n="about.c3.t">Национальный масштаб</h3>
+          <p class="muted mt-1" data-i18n="about.c3.d">Экспорт, инвестиции и международные связи.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SHOWROOMS -->
+  <section class="section" id="showrooms">
+    <div class="container">
+      <span class="eyebrow" data-i18n="show.eyebrow">Шоурумы</span>
+      <h2 data-i18n="show.title">Каталог товаров</h2>
+      <p class="section-sub" data-i18n="show.sub">Интерактивный каталог продукции компаний.</p>
+      <div class="grid cols-4 mt-3" id="showroomGrid"></div>
+    </div>
+  </section>
+
+  <!-- NEWS -->
+  <section class="section" id="news">
+    <div class="container">
+      <span class="eyebrow" data-i18n="news.eyebrow">Новости</span>
+      <h2 data-i18n="news.title">Лента компаний</h2>
+      <p class="section-sub" data-i18n="news.sub">Актуальные новости от компаний платформы.</p>
+      <div class="grid cols-2 mt-3" id="newsGrid"></div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section class="section" id="contact">
+    <div class="container">
+      <span class="eyebrow" data-i18n="contact.eyebrow">Контакты</span>
+      <h2 data-i18n="contact.title">Единый call-центр</h2>
+      <div class="contact-grid mt-3">
+        <div class="card">
+          <div class="card-ico" data-icon="phone" style="margin-left:auto;margin-right:auto"></div>
+          <h4 data-i18n="contact.phone">Телефон</h4>
+          <p class="muted">+998 71 200 00 00</p>
+        </div>
+        <div class="card">
+          <div class="card-ico" data-icon="mail" style="margin-left:auto;margin-right:auto"></div>
+          <h4 data-i18n="contact.email">Эл. почта</h4>
+          <p class="muted">info@konglomerat.uz</p>
+        </div>
+        <div class="card">
+          <div class="card-ico" data-icon="pin" style="margin-left:auto;margin-right:auto"></div>
+          <h4 data-i18n="contact.office">Главный офис</h4>
+          <p class="muted" data-i18n="contact.office.v">Ташкент, ул. Инноваций 1</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="brand">
+        <span class="logo-mark" data-icon="layers" data-icon-size="22"></span>
+        <span class="logo-text">Konglomerat</span>
+      </div>
+      <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap">
+        <a href="complaint.html" class="muted" data-i18n="comp.link">Жалоба</a>
+        <div class="muted">© 2026 Konglomerat. <span data-i18n="foot.rights">Все права защищены.</span></div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script>
+    // header
+    document.getElementById("header").innerHTML = buildHeader({
+      root: "",
+      nav: `<a href="#about" data-i18n="nav.about">О нас</a>
+            <a href="#showrooms" data-i18n="nav.showrooms">Шоурумы</a>
+            <a href="#news" data-i18n="nav.news">Новости</a>
+            <a href="#contact" data-i18n="nav.contact">Контакты</a>
+            <a href="assistant.html" data-i18n="nav.ai">AI-ассистент</a>
+            <a href="complaint.html" data-i18n="comp.link">Жалоба</a>`
+    });
+
+    // demo data
+    const PRODUCTS = [
+      { ico:"💍", company:"Oltin Saroy", name:{uz:"Oltin uzuk",ru:"Золотое кольцо",en:"Gold ring"},
+        desc:{uz:"24K oltin, qo'lda ishlangan",ru:"Золото 24K, ручная работа",en:"24K gold, handcrafted"}, price:"$1 200" },
+      { ico:"🪑", company:"Mebel Pro", name:{uz:"Yumshoq divan",ru:"Мягкий диван",en:"Soft sofa"},
+        desc:{uz:"Premium teri qoplama",ru:"Премиум кожаная обивка",en:"Premium leather"}, price:"$850" },
+      { ico:"⌚", company:"Vaqt Lux", name:{uz:"Klassik soat",ru:"Классические часы",en:"Classic watch"},
+        desc:{uz:"Shveytsariya mexanizmi",ru:"Швейцарский механизм",en:"Swiss movement"}, price:"$2 400" },
+      { ico:"👜", company:"Charm House", name:{uz:"Teri sumka",ru:"Кожаная сумка",en:"Leather bag"},
+        desc:{uz:"Tabiiy teri, milliy uslub",ru:"Натуральная кожа, нац. стиль",en:"Genuine leather"}, price:"$320" },
+      { ico:"🏺", company:"Hunarmand", name:{uz:"Sopol idish",ru:"Керамическая ваза",en:"Ceramic vase"},
+        desc:{uz:"Qo'lda bo'yalgan",ru:"Ручная роспись",en:"Hand-painted"}, price:"$140" },
+      { ico:"🧶", company:"Atlas Silk", name:{uz:"Atlas mato",ru:"Ткань Атлас",en:"Atlas silk"},
+        desc:{uz:"An'anaviy ipak",ru:"Традиционный шёлк",en:"Traditional silk"}, price:"$95" },
+      { ico:"💻", company:"TechNation", name:{uz:"Noutbuk Pro",ru:"Ноутбук Pro",en:"Laptop Pro"},
+        desc:{uz:"Mahalliy yig'ilgan",ru:"Местная сборка",en:"Locally assembled"}, price:"$1 050" },
+      { ico:"🍯", company:"Asal Bio", name:{uz:"Tog' asali",ru:"Горный мёд",en:"Mountain honey"},
+        desc:{uz:"100% tabiiy",ru:"100% натуральный",en:"100% natural"}, price:"$25" },
+    ];
+    const NEWS = [
+      { ico:"📈", company:"Oltin Saroy",
+        title:{uz:"Bugungi oltin kursi",ru:"Курс золота на сегодня",en:"Gold rate today"},
+        text:{uz:"1 gr oltin narxi 2% ga oshdi.",ru:"Цена 1 гр золота выросла на 2%.",en:"Price of 1g gold rose 2%."}, date:"2026-07-01" },
+      { ico:"🤝", company:"Konglomerat",
+        title:{uz:"Yangi eksport shartnomasi",ru:"Новый экспортный контракт",en:"New export deal"},
+        text:{uz:"3 kompaniya MarkaziyOsiyo bozoriga chiqdi.",ru:"3 компании вышли на рынок ЦА.",en:"3 firms entered CA market."}, date:"2026-06-30" },
+      { ico:"🚀", company:"TechNation",
+        title:{uz:"Startap aksellerator ochildi",ru:"Открыт стартап-акселератор",en:"Startup accelerator opens"},
+        text:{uz:"12 yangi loyiha qabul qilindi.",ru:"Принято 12 новых проектов.",en:"12 new projects accepted."}, date:"2026-06-28" },
+      { ico:"🏭", company:"Mebel Pro",
+        title:{uz:"Yangi fabrika ishga tushdi",ru:"Запущена новая фабрика",en:"New factory launched"},
+        text:{uz:"500 ish o'rni yaratildi.",ru:"Создано 500 рабочих мест.",en:"500 jobs created."}, date:"2026-06-25" },
+    ];
+
+    // Live data (from backend), falling back to the demo constants offline.
+    let SHOWROOM = PRODUCTS, FEED = NEWS;
+
+    function renderShowrooms() {
+      const L = K.lang;
+      document.getElementById("showroomGrid").innerHTML = SHOWROOM.map(p => `
+        <div class="card product-card">
+          <div class="product-thumb">${p.image?`<img class="prod-img" src="${p.image}" alt="">`:icon("package", 42)}</div>
+          <div class="product-body">
+            <div class="product-company">${p.company}</div>
+            <h4>${p.name[L]||p.name.ru||""}</h4>
+            <p class="product-desc">${(p.desc&&(p.desc[L]||p.desc.ru))||""}</p>
+            <div class="product-foot">
+              <span class="price">${p.price}</span>
+              <a class="btn btn-soft btn-sm" href="product.html?id=${p.id||''}">${L==='uz'?"Batafsil":L==='en'?"Details":"Подробнее"}</a>
+            </div>
+          </div>
+        </div>`).join("");
+    }
+    function renderNews() {
+      const L = K.lang;
+      document.getElementById("newsGrid").innerHTML = FEED.map(n => `
+        <a class="card news-item" href="news.html?id=${n.id||''}">
+          <div class="news-ico">${n.image?`<img class="news-thumb" src="${n.image}" alt="">`:icon("newspaper", 22)}</div>
+          <div>
+            <span class="product-company">${n.company}</span>
+            <h4>${n.title[L]||n.title.ru||""}</h4>
+            <p class="muted" style="font-size:.88rem">${(n.text&&(n.text[L]||n.text.ru))||""}</p>
+            <time>${n.date}</time>
+          </div>
+        </a>`).join("");
+    }
+
+    async function loadData() {
+      try { SHOWROOM = await api("/api/products"); } catch {}
+      try { FEED     = await api("/api/news"); } catch {}
+      renderShowrooms(); renderNews();
+    }
+
+    boot();
+    renderShowrooms();
+    renderNews();
+    loadData();
+    document.addEventListener("langchange", () => { renderShowrooms(); renderNews(); });
+  </script>
+</body>
+</html>

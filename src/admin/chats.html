@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Konglomerat — Chats</title>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body class="tg-page">
+  <div id="header"></div>
+
+  <div class="app-shell">
+    <aside class="sidebar" id="side"></aside>
+
+    <main class="workspace">
+      <div class="page-title"><div><h1 data-i18n="side.chats">Чаты</h1></div></div>
+
+      <div class="panel tg">
+        <div class="tg-list">
+          <div class="tg-search"><input id="chatSearch" data-i18n-ph="chat.typeMsg" placeholder="Поиск..." /></div>
+          <div id="chatList"></div>
+        </div>
+        <div class="tg-main">
+          <div class="tg-head" id="chatHead"></div>
+          <div class="chat-stream" id="stream"></div>
+          <div class="chat-input" id="msgComposer">
+            <input type="file" hidden id="msgFile" accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.zip" />
+            <button class="ci-btn" id="msgAttach" data-icon="paperclip" title="Файл / фото"></button>
+            <button class="ci-btn" id="msgMic" data-icon="mic" title="Голосовое"></button>
+            <input id="msgInput" data-i18n-ph="chat.typeMsg" placeholder="Сообщение..." />
+            <button class="btn btn-primary btn-sm" id="msgSend" data-i18n="chat.send">Отправить</button>
+          </div>
+          <div id="aiWrap" hidden style="flex:1;min-height:0;display:flex"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/main.js"></script>
+  <script>
+    requireRole("admin");
+    document.getElementById("header").innerHTML = buildHeader({
+      root: "../", nav: "",
+      right: `<button class="btn btn-soft btn-sm" onclick="logout()" data-i18n="btn.logout">Выйти</button>`
+    });
+    document.getElementById("side").innerHTML = buildAdminSidebar("chats");
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;" }[c]));
+
+    // First entry is the group (all members); the rest are 1:1 company chats.
+    const COMPANIES = ["Oltin Saroy","Mebel Pro","Vaqt Lux","Charm House","Hunarmand","Atlas Silk","TechNation","Asal Bio"];
+    let current = "group";
+
+    function meta(id) {
+      if (id === "ai")    return { name: t("chat.ai"),    sub: t("aichat.status"), ai: true };
+      if (id === "group") return { name: t("chat.group"), sub: t("chat.groupWho"), group: true };
+      return { name: id, sub: t("chat.individual"), group: false };
+    }
+
+    function renderList(filter = "") {
+      const f = filter.trim().toLowerCase();
+      const entries = ["ai", "group", ...COMPANIES].filter(id => !f || meta(id).name.toLowerCase().includes(f) || id.toLowerCase().includes(f));
+      document.getElementById("chatList").innerHTML = entries.map(id => {
+        const m = meta(id);
+        const av = m.ai ? icon("sparkles", 22) : m.group ? icon("users", 22) : esc(id[0]);
+        return `<div class="tg-item ${m.group ? "is-group" : ""} ${m.ai ? "is-group" : ""} ${id === current ? "active" : ""}" data-chat="${esc(id)}">
+          <div class="avatar">${av}</div>
+          <div class="grow"><b>${esc(m.name)}</b><small>${esc(m.sub)}</small></div>
+        </div>`;
+      }).join("");
+    }
+
+    function renderHead() {
+      const m = meta(current);
+      const av = m.ai ? icon("sparkles", 20) : m.group ? icon("users", 20) : esc(current[0]);
+      const head = document.getElementById("chatHead");
+      head.className = "tg-head " + (m.group || m.ai ? "is-group" : "");
+      head.innerHTML = `<button class="tg-back" onclick="backToList()" aria-label="Back">${icon("chevronLeft", 18)}</button>`
+        + `<div class="avatar">${av}</div><div><b>${esc(m.name)}</b><small>${esc(m.sub)}</small></div>`;
+    }
+    // mobile master-detail: return from a conversation to the chat list
+    function backToList() { document.querySelector(".tg").classList.remove("show-thread"); }
+
+    const meName = () => session() && session().name;
+    let lastSig = "";
+    // force=true → always re-render and scroll to bottom (used right after I send a message)
+    async function loadStream(force) {
+      const stream = document.getElementById("stream");
+      let msgs = [];
+      try { msgs = await api("/api/messages?chat=" + encodeURIComponent(current)); } catch { return; }
+      const sig = JSON.stringify(msgs.map(m => [m.id, m.text, m.edited, (m.seenBy || []).length]));
+      if (force || sig !== lastSig) {
+        lastSig = sig;
+        const atBottom = stream.scrollHeight - stream.scrollTop - stream.clientHeight < 80;
+        stream.innerHTML = msgs.map(m => msgBubble(m, meName(), { isGroup: current === "group" })).join("");
+        if (force || atBottom) stream.scrollTop = stream.scrollHeight;
+      }
+      try { await api("/api/messages/seen", { method: "POST", body: { chat: current } }); } catch {}
+    }
+
+    const stream = document.getElementById("stream");
+    const composer = document.getElementById("msgComposer");
+    const aiWrap = document.getElementById("aiWrap");
+
+    function selectChat(id) {
+      current = id;
+      document.querySelectorAll(".tg-item").forEach(el => el.classList.toggle("active", el.dataset.chat === id));
+      document.querySelector(".tg").classList.add("show-thread");   // mobile: reveal the conversation
+      renderHead();
+      if (id === "ai") {
+        stream.hidden = true; composer.hidden = true; aiWrap.hidden = false;
+        if (!aiWrap.dataset.init) { aiWrap.innerHTML = buildBizAiShell(); initBizAi(); aiWrap.dataset.init = "1"; }
+        return;
+      }
+      stream.hidden = false; composer.hidden = false; aiWrap.hidden = true;
+      lastSig = "";                 // force re-render for the newly selected chat
+      loadStream();
+    }
+
+    document.getElementById("chatList").addEventListener("click", e => {
+      const it = e.target.closest(".tg-item"); if (it) selectChat(it.dataset.chat);
+    });
+    document.getElementById("chatSearch").addEventListener("input", e => renderList(e.target.value));
+
+    initComposer({ input:"msgInput", send:"msgSend", attach:"msgAttach", file:"msgFile", mic:"msgMic",
+      getChat: () => current, reload: () => loadStream(true),
+      stream: "stream", meName: (session() || {}).name, isGroup: () => current === "group" });
+    initMessageActions("stream", loadStream);
+    setInterval(() => { if (current !== "ai") loadStream(); }, 3000);   // live delivery + read-receipts
+
+    function rebuild() { renderList(document.getElementById("chatSearch").value); renderHead(); }
+
+    boot();
+    renderList();
+    renderHead();
+    loadStream();
+    document.addEventListener("langchange", rebuild);
+  </script>
+</body>
+</html>

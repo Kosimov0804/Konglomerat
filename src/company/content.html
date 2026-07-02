@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Konglomerat — Content</title>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+  <div id="header"></div>
+
+  <div class="app-shell">
+    <aside class="sidebar" id="side"></aside>
+
+    <main class="workspace">
+      <div class="page-title"><div><h1 data-i18n="co.content">Управление контентом</h1></div></div>
+
+      <div class="grid cols-2" style="align-items:start">
+        <div class="panel">
+          <div class="panel-head"><h3 id="formTitle" data-i18n="co.addProduct">Добавить товар</h3></div>
+          <div class="panel-body">
+            <form id="productForm">
+              <div class="form-group">
+                <label data-i18n="co.pname">Название товара</label>
+                <input id="pName" class="form-control" required placeholder="Золотое кольцо" />
+              </div>
+              <div class="form-group">
+                <label data-i18n="co.pprice">Цена</label>
+                <input id="pPrice" class="form-control" required placeholder="$1 200" />
+              </div>
+              <div class="form-group">
+                <label data-i18n="co.pdesc">Описание</label>
+                <textarea id="pDesc" class="form-control" placeholder="..."></textarea>
+              </div>
+              <div class="form-group">
+                <label data-i18n="photos.label">Фото (1–3)</label>
+                <div class="news-upload">
+                  <input type="file" id="pImage" accept="image/*" multiple hidden />
+                  <button type="button" class="btn btn-soft btn-sm" id="pImageBtn" data-i18n="photos.add">Добавить фото</button>
+                </div>
+                <div class="attach-grid" id="pPreview"></div>
+              </div>
+              <div class="btn-row">
+                <button class="btn btn-primary btn-block" id="pSubmit" data-i18n="co.save">Сохранить</button>
+                <button type="button" class="btn btn-soft" id="pCancel" data-i18n="co.cancel" hidden>Отмена</button>
+              </div>
+            </form>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3 data-i18n="nav.showrooms">Шоурумы</h3><span class="tag" id="prodCount">0</span></div>
+          <div class="panel-body" id="myProducts"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/main.js"></script>
+  <script>
+    const ME = (requireRole("company") || {}).name || "";
+    document.getElementById("header").innerHTML = buildHeader({
+      root: "../", nav: "",
+      right: `<button class="btn btn-soft btn-sm" onclick="logout()" data-i18n="btn.logout">Выйти</button>`
+    });
+    document.getElementById("side").innerHTML = buildCompanySidebar("content");
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;" }[c]));
+
+    let myList = [];           // cache of this company's products
+    let editingId = null;      // id being edited, or null when creating
+
+    async function renderProducts() {
+      const L = K.lang;
+      try { myList = await api("/api/products?company=" + encodeURIComponent(ME)); } catch { myList = []; }
+      document.getElementById("myProducts").innerHTML = myList.map(p => `
+        <div class="list-row" data-id="${esc(p.id)}">
+          <div class="avatar">${p.image ? `<img class="news-thumb" src="${p.image}" alt="">` : icon("package", 18)}</div>
+          <div class="grow"><b>${esc(p.name[L]||p.name.ru||"")}</b><small>${esc(p.price||"")}</small></div>
+          <div class="row-actions">
+            <button class="icon-btn" data-act="edit" title="${esc(t("co.edit"))}">${icon("sliders", 16)}</button>
+            <button class="icon-btn danger" data-act="del" title="${esc(t("co.delete"))}">${icon("close", 16)}</button>
+          </div>
+        </div>`).join("");
+      document.getElementById("prodCount").textContent = myList.length;
+    }
+
+    // product photos (1–3)
+    const picker = createPhotoPicker({ button:"pImageBtn", input:"pImage", preview:"pPreview", max:3 });
+
+    const form = document.getElementById("productForm");
+    const cancelBtn = document.getElementById("pCancel");
+
+    function resetForm() {
+      editingId = null; picker.clear();
+      form.reset();
+      document.getElementById("formTitle").setAttribute("data-i18n", "co.addProduct");
+      document.getElementById("pSubmit").setAttribute("data-i18n", "co.save");
+      cancelBtn.hidden = true;
+      translateTree(form.closest(".panel"));
+    }
+
+    // Load a product into the form for editing.
+    function startEdit(p) {
+      editingId = p.id;
+      document.getElementById("pName").value = p.name[K.lang] || p.name.ru || "";
+      document.getElementById("pPrice").value = p.price || "";
+      document.getElementById("pDesc").value = (p.desc && (p.desc[K.lang] || p.desc.ru)) || "";
+      picker.set((p.images && p.images.length) ? p.images : (p.image ? [p.image] : []));
+      document.getElementById("formTitle").setAttribute("data-i18n", "co.editProduct");
+      document.getElementById("pSubmit").setAttribute("data-i18n", "co.update");
+      cancelBtn.hidden = false;
+      translateTree(form.closest(".panel"));
+      form.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    cancelBtn.addEventListener("click", resetForm);
+
+    // Row actions: edit / delete
+    document.getElementById("myProducts").addEventListener("click", async e => {
+      const btn = e.target.closest("button[data-act]"); if (!btn) return;
+      const id = btn.closest(".list-row").dataset.id;
+      const prod = myList.find(x => x.id === id); if (!prod) return;
+      if (btn.dataset.act === "edit") { startEdit(prod); return; }
+      if (btn.dataset.act === "del") {
+        if (!await uiConfirm({ title: t("co.delConfirm"), danger: true })) return;
+        try { await api("/api/products/" + encodeURIComponent(id), { method:"DELETE" });
+          if (editingId === id) resetForm();
+          await renderProducts(); toast(t("co.deleted"), "", "success");
+        } catch { toast(t("login.err.title"), "", "error"); }
+      }
+    });
+
+    form.addEventListener("submit", async e => {
+      e.preventDefault();
+      const name = document.getElementById("pName").value;
+      const desc = document.getElementById("pDesc").value;
+      const price = document.getElementById("pPrice").value;
+      const payload = { price, name:{ uz:name, ru:name, en:name }, desc:{ uz:desc, ru:desc, en:desc }, images: picker.get() };
+      try {
+        if (editingId) {
+          await api("/api/products/" + encodeURIComponent(editingId), { method:"PUT", body: payload });
+          resetForm(); await renderProducts(); toast(t("co.updated"), name + " ✓", "success");
+        } else {
+          await api("/api/products", { method:"POST", body:{ ico:"🆕", ...payload } });
+          resetForm(); await renderProducts(); toast(t("co.addProduct"), name + " ✓", "success");
+        }
+      } catch { toast(t("login.err.title"), "", "error"); }
+    });
+
+    boot();
+    renderProducts();
+    document.addEventListener("langchange", renderProducts);
+  </script>
+</body>
+</html>

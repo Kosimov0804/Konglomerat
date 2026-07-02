@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Konglomerat — Complaint</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="header"></div>
+
+  <section class="section">
+    <div class="container" style="max-width:560px">
+      <span class="eyebrow" data-i18n="comp.public.title">Оставить жалобу</span>
+      <h1 style="font-size:clamp(1.8rem,3.4vw,2.4rem)" data-i18n="comp.public.title">Оставить жалобу</h1>
+      <p class="section-sub" data-i18n="comp.public.sub">Опишите проблему или предложение — администратор ответит.</p>
+
+      <div class="panel mt-3">
+        <div class="panel-body" id="compBody">
+          <form id="compForm">
+            <div class="form-group">
+              <label data-i18n="comp.f.name">Ваше имя или компания</label>
+              <input id="cName" class="form-control" required placeholder="Ivan / Oltin Saroy" />
+            </div>
+            <div class="form-group">
+              <label data-i18n="comp.f.contact">Email или телефон</label>
+              <input id="cContact" class="form-control" placeholder="email@example.com" />
+            </div>
+            <div class="form-group">
+              <label data-i18n="comp.f.text">Текст жалобы</label>
+              <textarea id="cText" class="form-control" required rows="5" placeholder="..."></textarea>
+            </div>
+            <div class="form-group">
+              <label data-i18n="comp.f.photos">Фото (необязательно)</label>
+              <div class="news-upload">
+                <input type="file" id="cImages" accept="image/*" multiple hidden />
+                <button type="button" class="btn btn-soft btn-sm" id="cImagesBtn" data-i18n="comp.f.addPhoto">Добавить фото</button>
+              </div>
+              <div class="attach-grid" id="cPreview"></div>
+            </div>
+            <button class="btn btn-primary btn-block" data-i18n="comp.f.send">Отправить</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script src="js/main.js"></script>
+  <script>
+    // Complaints are for visitors only — send logged-in users to their own area.
+    if (session()) { location.href = session().role === "admin" ? "/admin/complaints.html" : "/company/dashboard.html"; }
+
+    document.getElementById("header").innerHTML = buildHeader({
+      root: "",
+      nav: `<a href="index.html#about" data-i18n="nav.about">О нас</a>
+            <a href="index.html#showrooms" data-i18n="nav.showrooms">Шоурумы</a>
+            <a href="index.html#news" data-i18n="nav.news">Новости</a>
+            <a href="assistant.html" data-i18n="nav.ai">AI-ассистент</a>
+            <a href="complaint.html" class="active" data-i18n="comp.link">Жалоба</a>`
+    });
+
+    // ---- photo attachments (up to 4) ----
+    const MAX_PHOTOS = 4;
+    let images = [];
+    const imgInput = document.getElementById("cImages");
+    const imgBtn = document.getElementById("cImagesBtn");
+    const preview = document.getElementById("cPreview");
+
+    function renderPreview() {
+      preview.innerHTML = images.map((src, i) => `
+        <div class="attach-item">
+          <img src="${src}" alt="">
+          <button type="button" class="attach-x" data-i="${i}" title="✕">${icon("close", 14)}</button>
+        </div>`).join("");
+      imgBtn.disabled = images.length >= MAX_PHOTOS;
+    }
+    imgBtn.addEventListener("click", () => imgInput.click());
+    imgInput.addEventListener("change", async () => {
+      for (const f of Array.from(imgInput.files)) {
+        if (images.length >= MAX_PHOTOS) { toast(t("comp.public.title"), "≤ " + MAX_PHOTOS, "error"); break; }
+        if (!f.type.startsWith("image/")) continue;
+        if (f.size > 5 * 1024 * 1024) { toast(t("login.err.title"), "≤ 5 MB", "error"); continue; }
+        try { images.push(await fileToDataURL(f)); } catch {}
+      }
+      imgInput.value = "";
+      renderPreview();
+    });
+    preview.addEventListener("click", e => {
+      const b = e.target.closest(".attach-x"); if (!b) return;
+      images.splice(+b.dataset.i, 1); renderPreview();
+    });
+
+    document.getElementById("compForm").addEventListener("submit", async e => {
+      e.preventDefault();
+      try {
+        await api("/api/complaints", { method:"POST", body:{
+          name: document.getElementById("cName").value,
+          contact: document.getElementById("cContact").value,
+          text: document.getElementById("cText").value,
+          images,
+        }});
+        document.getElementById("compBody").innerHTML = `
+          <div class="order-done">
+            <div class="done-ico">${icon("check", 28)}</div>
+            <p class="muted" data-i18n="comp.sent">Ваша жалоба отправлена! Мы скоро ответим.</p>
+            <a class="btn btn-ghost btn-block mt-2" href="index.html">Konglomerat</a>
+          </div>`;
+        translateTree(document.getElementById("compBody"));
+        renderIcons(document.getElementById("compBody"));
+        toast(t("comp.public.title"), t("comp.sent"), "success");
+      } catch { toast(t("login.err.title"), "", "error"); }
+    });
+
+    boot();
+  </script>
+</body>
+</html>

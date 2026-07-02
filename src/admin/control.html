@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Konglomerat — Control Panel</title>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+  <div id="header"></div>
+
+  <div class="app-shell">
+    <aside class="sidebar" id="side"></aside>
+
+    <main class="workspace">
+      <div class="page-title">
+        <div>
+          <h1 data-i18n="side.control">Панель управления</h1>
+          <div class="sub" data-i18n="cp.sub">Konglomerat — 30 компаний под единым контролем</div>
+        </div>
+      </div>
+
+      <div class="grid cols-2" style="align-items:start">
+        <div class="card">
+          <div class="card-ico" data-icon="video"></div>
+          <h3 data-i18n="control.confTitle">Создание конференции</h3>
+          <p class="muted mt-1" data-i18n="control.confDesc">Организуйте онлайн-встречу для всех 30 компаний.</p>
+          <a href="conferences.html" class="btn btn-primary mt-2" data-i18n="control.confBtn">Создать конференцию</a>
+        </div>
+
+        <div class="card">
+          <div class="card-ico" data-icon="file"></div>
+          <h3 data-i18n="control.repTitle">Сводный месячный отчёт</h3>
+          <p class="muted mt-1" data-i18n="control.repDesc">Сформируйте единый отчёт по всем компаниям.</p>
+          <button class="btn btn-ghost mt-2" id="reportBtn" data-i18n="control.repBtn">Monthly Report ALL</button>
+        </div>
+      </div>
+
+      <!-- POST / EDIT NEWS (admin only) -->
+      <div class="panel mt-3">
+        <div class="panel-head"><h3 id="newsFormTitle" data-i18n="news.post">Опубликовать новость</h3></div>
+        <div class="panel-body">
+          <p class="muted" data-i18n="news.postDesc" style="margin-bottom:16px">Добавьте заголовок, текст и фото — новость появится в ленте.</p>
+          <form id="newsForm">
+            <div class="ltabs" id="nlTabs">
+              <button type="button" data-l="uz">UZ</button>
+              <button type="button" data-l="ru" class="active">RU</button>
+              <button type="button" data-l="en">EN</button>
+            </div>
+
+            <div class="nl-pane" data-l="uz" hidden>
+              <div class="form-group"><label data-i18n="news.f.title">Заголовок</label>
+                <input class="form-control nl-title" data-l="uz" placeholder="Sarlavha (UZ)" /></div>
+              <div class="form-group"><label data-i18n="news.f.content">Текст новости</label>
+                <textarea class="form-control nl-content" data-l="uz" rows="5" placeholder="Yangilik matni (UZ)"></textarea></div>
+            </div>
+            <div class="nl-pane" data-l="ru">
+              <div class="form-group"><label data-i18n="news.f.title">Заголовок</label>
+                <input class="form-control nl-title" data-l="ru" placeholder="Заголовок (RU)" /></div>
+              <div class="form-group"><label data-i18n="news.f.content">Текст новости</label>
+                <textarea class="form-control nl-content" data-l="ru" rows="5" placeholder="Текст новости (RU)"></textarea></div>
+            </div>
+            <div class="nl-pane" data-l="en" hidden>
+              <div class="form-group"><label data-i18n="news.f.title">Заголовок</label>
+                <input class="form-control nl-title" data-l="en" placeholder="Headline (EN)" /></div>
+              <div class="form-group"><label data-i18n="news.f.content">Текст новости</label>
+                <textarea class="form-control nl-content" data-l="en" rows="5" placeholder="News text (EN)"></textarea></div>
+            </div>
+
+            <div class="form-group">
+              <label data-i18n="photos.label">Фото (1–3)</label>
+              <div class="news-upload">
+                <input type="file" id="nImage" accept="image/*" multiple hidden />
+                <button type="button" class="btn btn-soft btn-sm" id="nImageBtn" data-i18n="photos.add">Добавить фото</button>
+              </div>
+              <div class="attach-grid" id="nPreview"></div>
+            </div>
+            <div class="btn-row">
+              <button class="btn btn-primary" id="newsSubmit" data-i18n="news.f.publish">Опубликовать</button>
+              <button type="button" class="btn btn-soft" id="newsCancel" data-i18n="co.cancel" hidden>Отмена</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- EXISTING NEWS (edit / delete) -->
+      <div class="panel mt-3">
+        <div class="panel-head"><h3 data-i18n="news.list">Опубликованные новости</h3><span class="tag" id="newsCount">0</span></div>
+        <div class="panel-body" id="newsListWrap"></div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/main.js"></script>
+  <script>
+    requireRole("admin");
+    document.getElementById("header").innerHTML = buildHeader({
+      root: "../", nav: "",
+      right: `<button class="btn btn-soft btn-sm" onclick="logout()" data-i18n="btn.logout">Выйти</button>`
+    });
+    document.getElementById("side").innerHTML = buildAdminSidebar("control");
+
+    document.getElementById("reportBtn").addEventListener("click", async () => {
+      try {
+        await api("/api/reports/generate", { method:"POST" });
+        toast("Monthly Report ALL", K.lang==='uz'?"Hisobot tayyorlandi ✓":K.lang==='en'?"Report generated ✓":"Отчёт сформирован ✓", "success");
+      } catch { toast(t("login.err.title"), "", "error"); }
+    });
+
+    /* ---- Post news (with 1–3 photos) ---- */
+    const picker = createPhotoPicker({ button:"nImageBtn", input:"nImage", preview:"nPreview", max:3 });
+    // language tabs
+    const nlTabs = document.getElementById("nlTabs");
+    nlTabs.addEventListener("click", e => {
+      const b = e.target.closest("button[data-l]"); if (!b) return;
+      nlTabs.querySelectorAll("button").forEach(x => x.classList.toggle("active", x === b));
+      document.querySelectorAll(".nl-pane").forEach(p => p.hidden = p.dataset.l !== b.dataset.l);
+    });
+    const grab = cls => { const o = {}; document.querySelectorAll("." + cls).forEach(el => o[el.dataset.l] = el.value); return o; };
+    const set = (cls, obj) => { document.querySelectorAll("." + cls).forEach(el => el.value = (obj && obj[el.dataset.l]) || ""); };
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;" }[c]));
+    const form = document.getElementById("newsForm");
+    const cancelBtn = document.getElementById("newsCancel");
+    let newsList = [], editingId = null;
+
+    function resetNewsForm() {
+      editingId = null; picker.clear();
+      form.reset();
+      document.getElementById("newsFormTitle").setAttribute("data-i18n", "news.post");
+      document.getElementById("newsSubmit").setAttribute("data-i18n", "news.f.publish");
+      cancelBtn.hidden = true;
+      translateTree(form.closest(".panel"));
+    }
+
+    async function renderNews() {
+      try { newsList = await api("/api/news"); } catch { newsList = []; }
+      const L = K.lang;
+      const wrap = document.getElementById("newsListWrap");
+      wrap.innerHTML = newsList.length ? newsList.map(n => `
+        <div class="list-row" data-id="${esc(n.id)}">
+          <div class="avatar">${n.image ? `<img class="news-thumb" src="${n.image}" alt="">` : icon("newspaper", 18)}</div>
+          <div class="grow"><b>${esc((n.title && (n.title[L]||n.title.ru))||"")}</b><small>${esc(n.company||"")} · ${esc(n.date||"")}</small></div>
+          <div class="row-actions">
+            <button class="icon-btn" data-act="edit" title="${esc(t("co.edit"))}">${icon("sliders", 16)}</button>
+            <button class="icon-btn danger" data-act="del" title="${esc(t("co.delete"))}">${icon("close", 16)}</button>
+          </div>
+        </div>`).join("") : `<p class="muted" data-i18n="news.empty">Пока нет новостей.</p>`;
+      document.getElementById("newsCount").textContent = newsList.length;
+      translateTree(wrap);
+    }
+
+    function startEditNews(n) {
+      editingId = n.id;
+      set("nl-title", n.title);
+      // reconstruct the editable content from stored paragraphs (fallback to short text)
+      const content = {}; ["uz","ru","en"].forEach(l => {
+        const paras = (n.body && n.body[l]) || (n.text && n.text[l] ? [n.text[l]] : []);
+        content[l] = paras.join("\n\n");
+      });
+      set("nl-content", content);
+      picker.set((n.images && n.images.length) ? n.images : (n.image ? [n.image] : []));
+      document.getElementById("newsFormTitle").setAttribute("data-i18n", "news.edit");
+      document.getElementById("newsSubmit").setAttribute("data-i18n", "co.update");
+      cancelBtn.hidden = false;
+      translateTree(form.closest(".panel"));
+      form.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    cancelBtn.addEventListener("click", resetNewsForm);
+
+    document.getElementById("newsListWrap").addEventListener("click", async e => {
+      const btn = e.target.closest("button[data-act]"); if (!btn) return;
+      const id = btn.closest(".list-row").dataset.id;
+      const n = newsList.find(x => x.id === id); if (!n) return;
+      if (btn.dataset.act === "edit") { startEditNews(n); return; }
+      if (btn.dataset.act === "del") {
+        if (!await uiConfirm({ title: t("co.delConfirm"), danger: true })) return;
+        try { await api("/api/news/" + encodeURIComponent(id), { method:"DELETE" });
+          if (editingId === id) resetNewsForm();
+          await renderNews(); toast(t("co.deleted"), "", "success");
+        } catch { toast(t("login.err.title"), "", "error"); }
+      }
+    });
+
+    form.addEventListener("submit", async e => {
+      e.preventDefault();
+      const title = grab("nl-title"), content = grab("nl-content");
+      if (!Object.values(title).some(v => v.trim()) || !Object.values(content).some(v => v.trim())) {
+        toast(t("login.err.title"), t("news.post"), "error"); return;
+      }
+      try {
+        if (editingId) {
+          await api("/api/news/" + encodeURIComponent(editingId), { method:"PUT", body:{ title, content, images: picker.get() } });
+          resetNewsForm(); await renderNews(); toast(t("news.edit"), t("news.updated"), "success");
+        } else {
+          await api("/api/news", { method:"POST", body:{ title, content, images: picker.get() } });
+          resetNewsForm(); await renderNews(); toast(t("news.post"), t("news.posted"), "success");
+        }
+      } catch { toast(t("login.err.title"), "", "error"); }
+    });
+
+    boot();
+    renderNews();
+    document.addEventListener("langchange", renderNews);
+  </script>
+</body>
+</html>

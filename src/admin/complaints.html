@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Konglomerat — Complaints</title>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+  <div id="header"></div>
+
+  <div class="app-shell">
+    <aside class="sidebar" id="side"></aside>
+
+    <main class="workspace">
+      <div class="page-title">
+        <div>
+          <h1 data-i18n="comp.title">Управление жалобами</h1>
+          <div class="sub" data-i18n="comp.sub">Жалобы от компаний и посетителей.</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h3 data-i18n="complaints.title">Последние жалобы</h3>
+          <span class="pill" id="compCount">0</span>
+        </div>
+        <div class="panel-body" id="compList"></div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/main.js"></script>
+  <script>
+    requireRole("admin");
+    document.getElementById("header").innerHTML = buildHeader({
+      root: "../", nav: "",
+      right: `<button class="btn btn-soft btn-sm" onclick="logout()" data-i18n="btn.logout">Выйти</button>`
+    });
+    document.getElementById("side").innerHTML = buildAdminSidebar("complaints");
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;" }[c]));
+    const pick = v => (v && typeof v === "object") ? (v[K.lang] || v.ru || v.en || "") : (v || "");
+
+    let LIST = [];
+    async function render() {
+      try { LIST = await api("/api/complaints"); } catch { LIST = []; }
+      const pending = LIST.filter(c => c.status !== "resolved").length;
+      document.getElementById("compCount").textContent = pending;
+      const root = document.getElementById("compList");
+      if (!LIST.length) { root.innerHTML = `<p class="muted" data-i18n="comp.empty">Пока нет жалоб.</p>`; translateTree(root); return; }
+      root.innerHTML = LIST.map(c => {
+        const resolved = c.status === "resolved";
+        const preview = pick(c.title) || pick(c.text);
+        const nImg = (c.images && c.images.length) || 0;
+        const clip = nImg ? `<span class="attach-badge" title="${nImg}">${icon("paperclip", 13)}${nImg}</span>` : "";
+        return `<a class="list-row comp-head" href="complaint-view.html?id=${c.id}">
+          <div class="avatar">${esc((c.from || "?")[0])}</div>
+          <div class="grow"><b>${esc(c.from || "—")}</b><small>${esc(preview)}</small></div>
+          ${clip}
+          <span class="tag ${resolved ? "green" : "red"}">${t(resolved ? "comp.resolved" : "comp.pending")}</span>
+        </a>`;
+      }).join("");
+      translateTree(root);
+    }
+
+    boot();
+    render();
+    document.addEventListener("langchange", render);
+  </script>
+</body>
+</html>

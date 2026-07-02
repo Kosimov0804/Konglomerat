@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Konglomerat — R&D</title>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+  <div id="header"></div>
+
+  <div class="app-shell">
+    <aside class="sidebar" id="side"></aside>
+
+    <main class="workspace">
+      <div class="page-title">
+        <div>
+          <h1 data-i18n="rnd.title">R&D центр</h1>
+          <div class="sub" data-i18n="rnd.subAdmin">Рецензируйте и одобряйте присланные стартапы.</div>
+        </div>
+      </div>
+      <div class="grid cols-2" id="rndQueue" style="align-items:start"></div>
+    </main>
+  </div>
+
+  <script src="../js/main.js"></script>
+  <script>
+    requireRole("admin");
+    document.getElementById("header").innerHTML = buildHeader({
+      root: "../", nav: "",
+      right: `<button class="btn btn-soft btn-sm" onclick="logout()" data-i18n="btn.logout">Выйти</button>`
+    });
+    document.getElementById("side").innerHTML = buildAdminSidebar("rnd");
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;" }[c]));
+
+    let RND = [];
+    async function renderRnd() {
+      const L = K.lang;
+      try { RND = await api("/api/rnd"); } catch { RND = []; }
+      const root = document.getElementById("rndQueue");
+      if (!RND.length) { root.innerHTML = `<p class="muted">—</p>`; return; }
+      root.innerHTML = RND.map(r => {
+        const cls = r.status==='approved'?'approved':r.status==='rejected'?'rejected':'';
+        const tag = r.status==='approved'?'green':r.status==='rejected'?'red':'amber';
+        const tk  = r.status==='approved'?'rnd.approved':r.status==='rejected'?'rnd.rejected':'rnd.pending';
+        return `<div class="card rnd-card ${cls}" id="rnd-${r.id}">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span class="product-company">${esc(r.company)}</span>
+            <span class="tag ${tag}">${t(tk)}</span>
+          </div>
+          <h4 class="mt-1">${esc(r.name[L]||r.name.ru||"")}</h4>
+          <div class="rnd-meta"><span>${ig("folder")} ${esc(r.cat)}</span>${r.patent?` <span>${ig("bookmark")} Patent</span>`:""}</div>
+          <p class="muted" style="font-size:.88rem">${esc((r.desc&&(r.desc[L]||r.desc.ru))||"")}</p>
+          ${r.status==='pending' ? `<div style="display:flex;gap:8px;margin-top:14px">
+            <button class="btn btn-primary btn-sm" onclick="decideRnd('${r.id}',true)" data-i18n="rnd.approve">Одобрить</button>
+            <button class="btn btn-danger btn-sm" onclick="decideRnd('${r.id}',false)" data-i18n="rnd.reject">Отклонить</button>
+          </div>` : ""}
+        </div>`;
+      }).join("");
+      translateTree(root);
+    }
+    async function decideRnd(id, approve) {
+      try {
+        await api("/api/rnd/" + id, { method:"PUT", body:{ status: approve ? "approved" : "rejected" } });
+        const r = RND.find(x => x.id === id);
+        toast(t(approve ? "rnd.approved" : "rnd.rejected"), r ? r.company : "", approve ? "success" : "error");
+        renderRnd();
+      } catch { toast(t("login.err.title"), "", "error"); }
+    }
+
+    boot();
+    renderRnd();
+    document.addEventListener("langchange", renderRnd);
+  </script>
+</body>
+</html>

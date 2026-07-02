@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Konglomerat — Complaint</title>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+  <div id="header"></div>
+
+  <div class="app-shell">
+    <aside class="sidebar" id="side"></aside>
+
+    <main class="workspace">
+      <a class="btn btn-ghost btn-sm" href="complaints.html" style="margin-bottom:16px">← <span data-i18n="comp.back">К жалобам</span></a>
+      <div id="root"></div>
+    </main>
+  </div>
+
+  <script src="../js/main.js"></script>
+  <script>
+    requireRole("admin");
+    document.getElementById("header").innerHTML = buildHeader({
+      root: "../", nav: "",
+      right: `<button class="btn btn-soft btn-sm" onclick="logout()" data-i18n="btn.logout">Выйти</button>`
+    });
+    document.getElementById("side").innerHTML = buildAdminSidebar("complaints");
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;" }[c]));
+    const pick = v => (v && typeof v === "object") ? (v[K.lang] || v.ru || v.en || "") : (v || "");
+    const id = new URLSearchParams(location.search).get("id");
+    const root = document.getElementById("root");
+
+    async function render() {
+      let c = null;
+      try { c = await api("/api/complaints/" + encodeURIComponent(id)); } catch {}
+      if (!c) {
+        root.innerHTML = `<div class="panel" style="padding:40px;text-align:center;max-width:760px">
+          <p class="muted" data-i18n="comp.notfound">Жалоба не найдена.</p></div>`;
+        translateTree(root); return;
+      }
+      const resolved = c.status === "resolved";
+      const title = pick(c.title);
+      const atts = c.attachments || [];
+      const imgs = atts.filter(a => a.kind === "image");
+      const voices = atts.filter(a => a.kind === "voice");
+      const files = atts.filter(a => a.kind === "file");
+      const attHtml = (atts.length || (c.images && c.images.length)) ? `
+        <div class="comp-label" data-i18n="comp.attach">Вложения</div>
+        ${(imgs.length || (c.images && c.images.length)) ? `<div class="attach-grid">
+          ${(c.images || []).map(src => `<a class="attach-item view" href="${src}" target="_blank" rel="noopener"><img src="${src}" alt=""></a>`).join("")}
+          ${imgs.map(a => `<a class="attach-item view" href="${a.data}" target="_blank" rel="noopener"><img src="${a.data}" alt=""></a>`).join("")}
+        </div>` : ""}
+        ${voices.map(a => `<audio class="b-audio" controls src="${a.data}" style="display:block;margin:10px 0 0;max-width:300px"></audio>`).join("")}
+        ${files.length ? `<div class="attach-files">${files.map(a => `<a class="b-file" href="${a.data}" download="${esc(a.name || "file")}">${icon("file", 16)}<span>${esc(a.name || "file")}</span></a>`).join("")}</div>` : ""}
+      ` : "";
+      root.innerHTML = `
+        <div class="panel comp-view">
+          <div class="panel-head">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div class="ava">${esc((c.from || "?")[0])}</div>
+              <div class="cv-who"><b>${esc(c.from || "—")}</b>
+                <div class="comp-meta">${c.contact ? esc(c.contact) + " · " : ""}${esc(c.at || "")}</div></div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              ${c.official ? `<span class="tag gold" data-i18n="comp.official">Официальное письмо (AI)</span>` : ""}
+              <span class="tag ${resolved ? "green" : "red"}">${t(resolved ? "comp.resolved" : "comp.pending")}</span>
+            </div>
+          </div>
+          <div class="panel-body">
+            ${title ? `<h2>${esc(title)}</h2>` : ""}
+            <div class="comp-label" data-i18n="comp.problem">Описание проблемы</div>
+            <p class="comp-full${c.official ? " letter" : ""}">${esc(pick(c.text))}</p>
+            ${attHtml}
+            ${c.reply ? `<div class="comp-answer" style="margin-top:18px"><b data-i18n="comp.answer">Ответ администратора</b>${esc(c.reply)}</div>` : ""}
+            <hr class="hr" />
+            <div class="form-group">
+              <label data-i18n="comp.reply">Ответить</label>
+              <textarea class="form-control" id="rep" rows="3" data-i18n-ph="comp.replyPh" placeholder="Напишите ответ...">${esc(c.reply || "")}</textarea>
+            </div>
+            <div class="comp-actions">
+              <button class="btn btn-primary btn-sm" id="btnReply" data-i18n="comp.send">Отправить ответ</button>
+              ${resolved ? "" : `<button class="btn btn-soft btn-sm" id="btnResolve" data-i18n="comp.resolve">Отметить решённой</button>`}
+            </div>
+          </div>
+        </div>`;
+      translateTree(root);
+
+      document.getElementById("btnReply").addEventListener("click", async () => {
+        const text = document.getElementById("rep").value.trim(); if (!text) return;
+        try { await api("/api/complaints/" + id, { method:"PUT", body:{ reply: text } }); toast(t("comp.reply"), "✓", "success"); render(); }
+        catch { toast(t("login.err.title"), "", "error"); }
+      });
+      const br = document.getElementById("btnResolve");
+      if (br) br.addEventListener("click", async () => {
+        try { await api("/api/complaints/" + id, { method:"PUT", body:{ status:"resolved" } }); toast(t("comp.resolved"), "✓", "success"); render(); }
+        catch { toast(t("login.err.title"), "", "error"); }
+      });
+    }
+
+    boot();
+    render();
+    document.addEventListener("langchange", render);
+  </script>
+</body>
+</html>

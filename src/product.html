@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Konglomerat — Product</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="header"></div>
+
+  <section class="detail-wrap">
+    <div class="container">
+      <div class="crumb">
+        <a href="index.html">Konglomerat</a>
+        <span class="sep">/</span>
+        <a href="index.html#showrooms" data-i18n="prod.back">Шоурумы</a>
+        <span class="sep">/</span>
+        <strong id="crumbName">…</strong>
+      </div>
+      <div id="detailRoot"></div>
+    </div>
+  </section>
+
+  <script src="js/main.js"></script>
+  <script>
+    document.getElementById("header").innerHTML = buildHeader({
+      root: "",
+      nav: `<a href="index.html#about" data-i18n="nav.about">О нас</a>
+            <a href="index.html#showrooms" class="active" data-i18n="nav.showrooms">Шоурумы</a>
+            <a href="index.html#news" data-i18n="nav.news">Новости</a>
+            <a href="assistant.html" data-i18n="nav.ai">AI-ассистент</a>`
+    });
+
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;" }[c]));
+    const root = document.getElementById("detailRoot");
+    const id = new URLSearchParams(location.search).get("id");
+
+    function nameOf(p) { const L = K.lang; return (p.name && (p.name[L] || p.name.ru)) || ""; }
+    function descOf(p) { const L = K.lang; return (p.desc && (p.desc[L] || p.desc.ru)) || ""; }
+
+    async function load() {
+      let p = null;
+      try { p = await api("/api/products/" + encodeURIComponent(id)); } catch {}
+      if (!p) {
+        document.getElementById("crumbName").textContent = "—";
+        root.innerHTML = `<div class="panel" style="padding:40px;text-align:center">
+          <p class="muted" data-i18n="prod.notfound">Товар не найден.</p>
+          <a class="btn btn-primary mt-2" href="index.html#showrooms" data-i18n="prod.back">Шоурумы</a></div>`;
+        translateTree(root); return;
+      }
+      document.getElementById("crumbName").textContent = nameOf(p);
+      const imgs = (p.images && p.images.length) ? p.images : (p.image ? [p.image] : []);
+      const gallery = imgs.length
+        ? `<div class="detail-visual"><img class="detail-img" id="mainImg" src="${imgs[0]}" alt=""></div>
+           ${imgs.length > 1 ? `<div class="thumb-strip">${imgs.map((s, i) => `<button type="button" class="thumb${i===0?" active":""}" data-src="${s}"><img src="${s}" alt=""></button>`).join("")}</div>` : ""}`
+        : `<div class="detail-visual">${icon("package", 96)}</div>`;
+      root.innerHTML = `
+        <div class="detail-grid">
+          <div class="detail-info">
+            <span class="eyebrow">${esc(p.company)}</span>
+            <h1>${esc(nameOf(p))}</h1>
+            ${gallery}
+            <h3 data-i18n="prod.about">О товаре</h3>
+            <p class="muted mt-1">${esc(descOf(p))}</p>
+            <ul class="feat-list">
+              <li>${icon("check",18)} <span data-i18n="prod.feat1">Гарантированное качество</span></li>
+              <li>${icon("check",18)} <span data-i18n="prod.feat2">Проверено Konglomerat</span></li>
+              <li>${icon("check",18)} <span data-i18n="prod.feat3">Доставка по всей стране</span></li>
+            </ul>
+          </div>
+
+          <div class="panel buy-card">
+            <div class="panel-head"><h3 data-i18n="prod.orderTitle">Оформление заказа</h3></div>
+            <div class="panel-body" id="buyBody">
+              <div class="detail-price">${esc(p.price || "")}</div>
+              <form id="buyForm">
+                <div class="form-group">
+                  <label data-i18n="prod.name">Ваше имя</label>
+                  <input id="oName" class="form-control" required placeholder="Ivan Ivanov" />
+                </div>
+                <div class="form-group">
+                  <label data-i18n="prod.contact">Телефон</label>
+                  <input id="oContact" class="form-control" type="tel" required placeholder="+998 90 123 45 67" />
+                </div>
+                <div class="form-group">
+                  <label data-i18n="prod.qty">Количество</label>
+                  <input id="oQty" class="form-control" type="number" min="1" value="1" />
+                </div>
+                <button class="btn btn-primary btn-block" data-i18n="prod.buy">Купить сейчас</button>
+              </form>
+            </div>
+          </div>
+        </div>`;
+      translateTree(root);
+      renderIcons(root);
+
+      // gallery: thumbnail → main image
+      const strip = root.querySelector(".thumb-strip");
+      if (strip) strip.addEventListener("click", e => {
+        const b = e.target.closest(".thumb"); if (!b) return;
+        document.getElementById("mainImg").src = b.dataset.src;
+        strip.querySelectorAll(".thumb").forEach(x => x.classList.toggle("active", x === b));
+      });
+
+      document.getElementById("buyForm").addEventListener("submit", async e => {
+        e.preventDefault();
+        try {
+          const order = await api("/api/orders", { method: "POST", body: {
+            productId: p.id,
+            name: document.getElementById("oName").value,
+            contact: document.getElementById("oContact").value,
+            qty: document.getElementById("oQty").value,
+          }});
+          document.getElementById("buyBody").innerHTML = `
+            <div class="order-done">
+              <div class="done-ico">${icon("check", 28)}</div>
+              <b style="display:block;font-size:1.05rem;margin-bottom:6px">${esc(nameOf(p))} × ${order.qty}</b>
+              <p class="muted" data-i18n="prod.success">Заказ принят! Мы свяжемся с вами в ближайшее время.</p>
+              <div style="font-size:.8rem;color:var(--text-faint);margin-top:10px">#${esc(order.id)}</div>
+              <a class="btn btn-ghost btn-block mt-2" href="index.html#showrooms" data-i18n="prod.back">Шоурумы</a>
+            </div>`;
+          translateTree(document.getElementById("buyBody"));
+          renderIcons(document.getElementById("buyBody"));
+          toast(nameOf(p), t("prod.success"), "success");
+        } catch { toast(t("login.err.title"), "", "error"); }
+      });
+    }
+
+    boot();
+    load();
+    document.addEventListener("langchange", load);
+  </script>
+</body>
+</html>

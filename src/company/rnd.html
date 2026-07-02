@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Konglomerat — R&D</title>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+  <div id="header"></div>
+
+  <div class="app-shell">
+    <aside class="sidebar" id="side"></aside>
+
+    <main class="workspace">
+      <div class="page-title">
+        <div>
+          <h1 data-i18n="rnd.title">R&D центр</h1>
+          <div class="sub" data-i18n="rnd.subCo">Подавайте стартап-проекты и заявки на патенты.</div>
+        </div>
+      </div>
+
+      <div class="grid cols-2" style="align-items:start">
+        <div class="panel">
+          <div class="panel-head"><h3 data-i18n="rnd.submit">Подать стартап-проект</h3></div>
+          <div class="panel-body">
+            <form id="rndForm">
+              <div class="form-group">
+                <label data-i18n="rnd.pname">Название проекта</label>
+                <input id="rName" class="form-control" required placeholder="Smart logistics" />
+              </div>
+              <div class="form-group">
+                <label data-i18n="rnd.pcat">Направление</label>
+                <select id="rCat" class="form-control">
+                  <option>AI / IoT</option><option>GreenTech</option><option>FinTech</option><option>BioTech</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label data-i18n="rnd.pdesc">Описание проекта</label>
+                <textarea id="rDesc" class="form-control" placeholder="..."></textarea>
+              </div>
+              <label class="form-group" style="display:flex;align-items:center;gap:10px">
+                <input type="checkbox" id="rPatent" /> <span data-i18n="rnd.patent">Заявка на патент</span>
+              </label>
+              <button class="btn btn-primary btn-block" data-i18n="rnd.send">Отправить</button>
+            </form>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3 data-i18n="rnd.review">Очередь на рассмотрение</h3></div>
+          <div class="panel-body" id="myRnd"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/main.js"></script>
+  <script>
+    const ME = (requireRole("company") || {}).name || "";
+    document.getElementById("header").innerHTML = buildHeader({
+      root: "../", nav: "",
+      right: `<button class="btn btn-soft btn-sm" onclick="logout()" data-i18n="btn.logout">Выйти</button>`
+    });
+    document.getElementById("side").innerHTML = buildCompanySidebar("rnd");
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;" }[c]));
+
+    async function renderMyRnd() {
+      const L = K.lang; let list = [];
+      try { list = await api("/api/rnd?company=" + encodeURIComponent(ME)); } catch {}
+      const root = document.getElementById("myRnd");
+      if (!list.length) { root.innerHTML = `<p class="muted">—</p>`; return; }
+      root.innerHTML = list.map(r => {
+        const tag = r.status==='approved'?'green':r.status==='rejected'?'red':'amber';
+        const tk  = r.status==='approved'?'rnd.approved':r.status==='rejected'?'rnd.rejected':'rnd.pending';
+        return `<div class="list-row">
+          <div class="avatar">${icon("flask", 18)}</div>
+          <div class="grow"><b>${esc(r.name[L]||r.name.ru||"")}</b><small>${esc(r.cat)}</small></div>
+          <span class="tag ${tag}">${t(tk)}</span>
+        </div>`;
+      }).join("");
+    }
+    document.getElementById("rndForm").addEventListener("submit", async e => {
+      e.preventDefault();
+      const name = document.getElementById("rName").value;
+      const desc = document.getElementById("rDesc").value;
+      try {
+        await api("/api/rnd", { method:"POST", body:{ cat: document.getElementById("rCat").value,
+          patent: document.getElementById("rPatent").checked,
+          name:{ uz:name, ru:name, en:name }, desc:{ uz:desc, ru:desc, en:desc } } });
+        e.target.reset(); renderMyRnd();
+        toast(t("rnd.submit"), t("rnd.sent"), "success");
+      } catch { toast(t("login.err.title"), "", "error"); }
+    });
+
+    boot();
+    renderMyRnd();
+    document.addEventListener("langchange", renderMyRnd);
+  </script>
+</body>
+</html>

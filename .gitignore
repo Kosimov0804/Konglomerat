@@ -1,0 +1,16 @@
+# dependencies (project is zero-dependency, but just in case)
+node_modules/
+
+# editor / tooling config
+.claude/
+
+# TLS certificates — contains a PRIVATE KEY, never commit
+certs/
+
+# runtime database (seeded automatically on first run; may hold personal uploads/contacts)
+data/db.json
+
+# logs & OS junk
+*.log
+.DS_Store
+Thumbs.db

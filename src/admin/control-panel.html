@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Konglomerat — Overview</title>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+  <div id="header"></div>
+
+  <div class="app-shell">
+    <aside class="sidebar" id="side"></aside>
+
+    <main class="workspace">
+      <div class="page-title">
+        <div>
+          <h1 data-i18n="cp.title">Центр управления</h1>
+          <div class="sub" data-i18n="cp.sub">Konglomerat — 30 компаний под единым контролем</div>
+        </div>
+        <span class="tag green">● ONLINE</span>
+      </div>
+
+      <div class="zone-title"><span data-icon="eye"></span> <span data-i18n="cp.kuzatuv">Kuzatuv</span>
+        <span class="badge" data-i18n="cp.kuzatuv.badge">Мониторинг</span></div>
+
+      <div class="grid cols-4 mt-2">
+        <div class="card stat-tile">
+          <div class="s-top"><div class="s-ico" data-icon="building"></div><span class="s-delta up">+0</span></div>
+          <div class="s-num">30</div>
+          <div class="s-lbl" data-i18n="kpi.companies">Активные компании</div>
+        </div>
+        <div class="card stat-tile">
+          <div class="s-top"><div class="s-ico" data-icon="cpu"></div><span class="s-delta up">+18%</span></div>
+          <div class="s-num">4 820</div>
+          <div class="s-lbl" data-i18n="kpi.ai">AI-запросов (сегодня)</div>
+        </div>
+        <div class="card stat-tile">
+          <div class="s-top"><div class="s-ico" data-icon="rocket"></div><span class="s-delta up">+7</span></div>
+          <div class="s-num">12</div>
+          <div class="s-lbl" data-i18n="kpi.startups">Новые стартапы</div>
+        </div>
+        <div class="card stat-tile">
+          <div class="s-top"><div class="s-ico" data-icon="bag"></div><span class="s-delta up">+24</span></div>
+          <div class="s-num">186</div>
+          <div class="s-lbl" data-i18n="kpi.showrooms">Загруженные шоурумы</div>
+        </div>
+      </div>
+
+      <div class="grid cols-2 mt-3" style="align-items:start">
+        <div class="panel">
+          <div class="panel-head"><h3 data-i18n="chart.title">Активность AI-ассистента (неделя)</h3></div>
+          <div class="panel-body"><div class="chart-holder"><canvas id="aiChart"></canvas></div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3 data-i18n="chart.company">Аналитика компаний (секторы)</h3></div>
+          <div class="panel-body"><div class="chart-holder"><canvas id="companyChart"></canvas></div></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="../js/main.js"></script>
+  <script>
+    requireRole("admin");
+    document.getElementById("header").innerHTML = buildHeader({
+      root: "../", nav: "",
+      right: `<button class="btn btn-soft btn-sm" onclick="logout()" data-i18n="btn.logout">Выйти</button>`
+    });
+    document.getElementById("side").innerHTML = buildAdminSidebar("overview");
+
+    async function loadStats() {
+      try {
+        const s = await api("/api/stats");
+        const vals = [s.companies, s.aiRequests.toLocaleString(), s.startups, s.showrooms];
+        document.querySelectorAll(".stat-tile .s-num").forEach((n, i) => { if (vals[i] != null) n.textContent = vals[i]; });
+      } catch {}
+    }
+
+    const CHART_LABELS = {
+      days: { uz:["Du","Se","Cho","Pa","Ju","Sha","Ya"], ru:["Пн","Вт","Ср","Чт","Пт","Сб","Вс"], en:["Mon","Tue","Wed","Thu","Fri","Sat","Sun"] },
+      sectors: { uz:["Zargarlik","Mebel","Texno","Oziq-ovqat","To'qimachilik","Hunarmand"], ru:["Ювелирка","Мебель","Техно","Продукты","Текстиль","Ремёсла"], en:["Jewelry","Furniture","Tech","Food","Textile","Crafts"] },
+    };
+    const AI_VALUES = [3200,4100,2900,5200,3800,6100,4820];
+    const COMPANY_VALUES = [42,31,58,27,19,33];
+    let DASH = {};
+    function buildCharts() {
+      DASH = initDashboardCharts({
+        ai:      { labels: CHART_LABELS.days[K.lang],    values: AI_VALUES },
+        company: { labels: CHART_LABELS.sectors[K.lang], values: COMPANY_VALUES },
+      });
+    }
+    function relabelCharts() {
+      if (DASH.aiChart)      { DASH.aiChart.data.labels      = CHART_LABELS.days[K.lang];    DASH.aiChart.update("none"); }
+      if (DASH.companyChart) { DASH.companyChart.data.labels = CHART_LABELS.sectors[K.lang]; DASH.companyChart.update("none"); }
+    }
+
+    boot();
+    loadStats();
+    buildCharts();
+    document.addEventListener("langchange", () => { relabelCharts(); loadStats(); });
+  </script>
+</body>
+</html>

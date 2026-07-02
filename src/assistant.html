@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Konglomerat — AI Assistant</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <!-- HEADER injected by JS -->
+  <div id="header"></div>
+
+  <!-- LOGIN GATE (shown to every visitor before chatting) -->
+  <div class="asst-login" id="aiLogin">
+    <div class="lcard">
+      <button class="lcard-close" id="lgClose" title="Close" data-icon="close" data-icon-size="18"></button>
+      <div class="ai-avatar" data-icon="sparkles" data-icon-size="26"></div>
+      <h2 data-i18n="aichat.login.title">Вход в систему</h2>
+      <p data-i18n="aichat.login.sub">Введите логин и пароль — войдёте в AI-чат.</p>
+
+      <form id="lgForm">
+        <input id="lgUser" type="text" autocomplete="username" data-i18n-ph="aichat.login.user" placeholder="Логин" />
+        <input id="lgPass" type="password" autocomplete="current-password" data-i18n-ph="aichat.login.pass" placeholder="Пароль" />
+        <div class="err" id="lgErr"></div>
+        <button type="submit" class="btn btn-primary" data-i18n="aichat.login.enter">Войти →</button>
+      </form>
+
+      <div class="asst-login-or" data-i18n="aichat.login.or">ИЛИ</div>
+
+      <form id="lgEmailForm">
+        <input id="lgEmail" type="email" autocomplete="email" data-i18n-ph="aichat.login.email" placeholder="email@gmail.com" />
+        <button type="submit" class="btn btn-ghost" data-i18n="aichat.login.emailBtn">Продолжить с email</button>
+      </form>
+
+      <button class="lg-skip" id="lgDemo" data-i18n="aichat.login.demo">Демо — чат с AI</button>
+    </div>
+  </div>
+
+  <section class="chat-page">
+    <div class="container">
+      <span class="eyebrow" data-i18n="aichat.title">AI-ассистент</span>
+      <h1 style="font-size:clamp(1.8rem,3.4vw,2.6rem)" data-i18n="aichat.title">AI-ассистент</h1>
+      <p class="section-sub" data-i18n="aichat.sub">Задайте любые вопросы о платформе Konglomerat.</p>
+
+      <div class="panel chat-shell">
+        <div class="chat-shell-head">
+          <div class="ai-avatar" data-icon="sparkles" data-icon-size="24"></div>
+          <div>
+            <b data-i18n="aichat.title">AI-ассистент</b>
+            <em data-i18n="aichat.status">Онлайн · 24/7</em>
+          </div>
+        </div>
+
+        <div class="ai-limit" id="limitBar"></div>
+        <div class="chat-shell-body" id="chatBody"></div>
+
+        <div class="chat-suggest" id="chatSuggest">
+          <button data-i18n="aichat.s1">Что такое Konglomerat?</button>
+          <button data-i18n="aichat.s2">Какие есть компании?</button>
+          <button data-i18n="aichat.s3">Как посмотреть шоурумы?</button>
+        </div>
+
+        <div class="chat-shell-input">
+          <input type="text" id="chatInput" data-i18n-ph="ai.placeholder" placeholder="Напишите ваш вопрос..." />
+          <button id="chatSend" data-icon="send" data-icon-size="18"></button>
+        </div>
+      </div>
+
+      <p class="chat-disclaimer" data-i18n="aichat.disclaimer">AI-ассистент работает в демо-режиме.</p>
+    </div>
+  </section>
+
+  <script src="js/main.js"></script>
+  <script>
+    document.getElementById("header").innerHTML = buildHeader({
+      root: "",
+      nav: `<a href="index.html#about" data-i18n="nav.about">О нас</a>
+            <a href="index.html#showrooms" data-i18n="nav.showrooms">Шоурумы</a>
+            <a href="index.html#news" data-i18n="nav.news">Новости</a>
+            <a href="assistant.html" class="active" data-i18n="nav.ai">AI-ассистент</a>`
+    });
+
+    /* ==========================================================
+       Per-visitor gate + 3-prompt limit + Konglomerat topic guard
+       All enforced by the backend (/api/ai/*).
+       ========================================================== */
+    const body    = document.getElementById("chatBody");
+    const input   = document.getElementById("chatInput");
+    const sendBtn = document.getElementById("chatSend");
+    const suggest = document.getElementById("chatSuggest");
+    const limitBar = document.getElementById("limitBar");
+
+    const gate     = document.getElementById("aiLogin");
+    const lgForm   = document.getElementById("lgForm");
+    const lgEmailF = document.getElementById("lgEmailForm");
+    const lgErr    = document.getElementById("lgErr");
+    const lgDemo   = document.getElementById("lgDemo");
+    const lgClose  = document.getElementById("lgClose");
+
+    let remaining = 3, locked = false;
+
+    function setVisitor(id) { localStorage.setItem("kong_ai_visitor", id); }
+    function visitor()      { return localStorage.getItem("kong_ai_visitor"); }
+
+    function openGate()  { gate.hidden = false; }
+    function closeGate() { gate.hidden = true; input.focus(); }
+
+    // Registered accounts (admin / company1) go straight to their panels.
+    lgForm.addEventListener("submit", async e => {
+      e.preventDefault();
+      lgErr.textContent = "";
+      const u = document.getElementById("lgUser").value.trim();
+      const p = document.getElementById("lgPass").value;
+      try {
+        const { token, user } = await api("/api/auth/login", { method:"POST", body:{ username:u, password:p } });
+        setSession(token, user);
+        toast(t("login.ok.title"), t("login.ok.msg"), "success");
+        setTimeout(() => location.href = user.role === "admin" ? "/admin/control-panel.html" : "/company/dashboard.html", 700);
+      } catch { lgErr.textContent = t("aichat.login.err"); }
+    });
+
+    lgEmailF.addEventListener("submit", async e => {
+      e.preventDefault();
+      lgErr.textContent = "";
+      const email = document.getElementById("lgEmail").value.trim().toLowerCase();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { lgErr.textContent = t("aichat.login.bademail"); return; }
+      setVisitor(email);
+      closeGate(); await startChat();
+    });
+
+    lgDemo.addEventListener("click", async () => {
+      if (!visitor()) setVisitor("demo-" + Math.random().toString(36).slice(2));
+      closeGate(); await startChat();
+    });
+    lgClose.addEventListener("click", async () => {
+      if (!visitor()) setVisitor("demo-" + Math.random().toString(36).slice(2));
+      closeGate(); await startChat();
+    });
+
+    /* ---- chat ---- */
+    function addMsg(text, cls) {
+      const m = document.createElement("div");
+      m.className = "ai-msg " + cls;
+      m.textContent = text;
+      body.appendChild(m);
+      body.scrollTop = body.scrollHeight;
+      return m;
+    }
+    function paintLimit() {
+      if (remaining > 0) {
+        limitBar.classList.remove("locked");
+        limitBar.textContent = `${remaining} ${t("aichat.left")}`;
+        input.disabled = false; sendBtn.disabled = false;
+      } else {
+        limitBar.classList.add("locked");
+        limitBar.textContent = t("aichat.locked");
+        input.disabled = true; sendBtn.disabled = true;
+      }
+    }
+
+    async function send(text) {
+      const v = (text ?? input.value).trim();
+      if (!v || locked) return;
+      addMsg(v, "user");
+      input.value = "";
+      const typing = addMsg("", "bot typing");
+      typing.innerHTML = "<span></span><span></span><span></span>";
+      try {
+        const r = await api("/api/ai/chat", { method:"POST", body:{ visitor:visitor(), message:v, lang:K.lang } });
+        typing.remove();
+        if (r.offtopic) { addMsg(t("aichat.offtopic"), "warn"); return; } // does not consume a prompt
+        if (typeof r.remaining === "number") remaining = r.remaining;
+        if (r.locked) { locked = true; }
+        paintLimit();
+        if (r.reply) addMsg(r.reply, "bot");
+        else if (r.locked) addMsg(t("aichat.locked"), "warn");
+      } catch {
+        typing.remove();
+        addMsg({ uz:"Xatolik yuz berdi.", ru:"Произошла ошибка.", en:"An error occurred." }[K.lang], "warn");
+      }
+    }
+
+    let started = false, greetEl = null;
+    async function startChat() {
+      if (!started) { greetEl = addMsg(t("ai.welcome"), "bot"); started = true; }
+      try { const u = await api("/api/ai/usage?visitor=" + encodeURIComponent(visitor())); remaining = u.remaining; locked = u.locked; } catch {}
+      paintLimit();
+    }
+
+    sendBtn.addEventListener("click", () => send());
+    input.addEventListener("keydown", e => { if (e.key === "Enter") send(); });
+    suggest.addEventListener("click", e => { const b = e.target.closest("button"); if (b) send(b.textContent); });
+
+    boot();
+    // keep the assistant's own text in sync with the chosen language
+    document.addEventListener("langchange", () => {
+      if (!started) return;
+      paintLimit();
+      if (greetEl) greetEl.textContent = t("ai.welcome");
+    });
+
+    // Logged-in users skip the gate; every visitor must identify (email / login) first.
+    if (session()) { setVisitor(session().name); closeGate(); startChat(); }
+    else { openGate(); }
+  </script>
+</body>
+</html>

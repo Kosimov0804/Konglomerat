@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Konglomerat — Chats</title>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+  <div id="header"></div>
+
+  <div class="app-shell">
+    <aside class="sidebar" id="side"></aside>
+
+    <main class="workspace">
+      <div class="page-title"><div><h1 data-i18n="side.chats">Чаты</h1></div></div>
+
+      <div class="chat-tabs">
+        <button class="chat-tab active" data-tab="group">
+          <span class="ct-ico" data-icon="message" data-icon-size="18"></span><span data-i18n="chat.group">Общий чат</span>
+        </button>
+        <button class="chat-tab" data-tab="me">
+          <span class="ct-ico" data-icon="users" data-icon-size="18"></span><span data-i18n="chat.admin">Админ чат</span>
+        </button>
+        <button class="chat-tab" data-tab="ai">
+          <span class="ct-ico" data-icon="sparkles" data-icon-size="18"></span><span data-i18n="chat.ai">AI-ассистент</span>
+        </button>
+      </div>
+
+      <div class="panel chat-box" id="chatBox" style="height:calc(100vh - 300px);min-height:440px">
+        <div class="panel-head" id="chatHead"></div>
+        <div class="chat-stream" id="stream"></div>
+        <div class="chat-input">
+          <input type="file" hidden id="chFile" accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.zip" />
+          <button class="ci-btn" id="chAttach" data-icon="paperclip" title="Файл / фото"></button>
+          <button class="ci-btn" id="chMic" data-icon="mic" title="Голосовое"></button>
+          <input id="chInput" data-i18n-ph="chat.typeMsg" placeholder="Сообщение..." />
+          <button class="btn btn-primary btn-sm" id="chSend" data-i18n="chat.send">Отправить</button>
+        </div>
+      </div>
+
+      <div id="aiWrap" hidden style="height:calc(100vh - 300px);min-height:440px"></div>
+    </main>
+  </div>
+
+  <script src="../js/main.js"></script>
+  <script>
+    const ME = (requireRole("company") || {}).name || "";
+    document.getElementById("header").innerHTML = buildHeader({
+      root: "../", nav: "",
+      right: `<button class="btn btn-soft btn-sm" onclick="logout()" data-i18n="btn.logout">Выйти</button>`
+    });
+    document.getElementById("side").innerHTML = buildCompanySidebar("chats");
+
+    let tab = "group";                              // "group" | "me"
+    const chatId = () => tab === "group" ? "group" : ME;
+
+    function renderHead() {
+      const head = document.getElementById("chatHead");
+      if (tab === "group") {
+        head.innerHTML = `<div><h3 data-i18n="chat.group">Общий чат</h3><span class="who" data-i18n="chat.groupWho">31 участник</span></div><span class="tag">31</span>`;
+      } else {
+        head.innerHTML = `<div><h3 data-i18n="chat.admin">Админ чат</h3><span class="who">Admin · 1:1</span></div>`;
+      }
+      translateTree(head);
+    }
+    let lastSig = "";
+    // force=true → always re-render and scroll to bottom (used right after I send a message)
+    async function loadStream(force) {
+      const stream = document.getElementById("stream");
+      let msgs = [];
+      try { msgs = await api("/api/messages?chat=" + encodeURIComponent(chatId())); } catch { return; }
+      const sig = JSON.stringify(msgs.map(m => [m.id, m.text, m.edited, (m.seenBy || []).length]));
+      if (force || sig !== lastSig) {
+        lastSig = sig;
+        const atBottom = stream.scrollHeight - stream.scrollTop - stream.clientHeight < 80;
+        stream.innerHTML = msgs.map(m => msgBubble(m, ME, { isGroup: tab === "group" })).join("");
+        if (force || atBottom) stream.scrollTop = stream.scrollHeight;
+      }
+      try { await api("/api/messages/seen", { method: "POST", body: { chat: chatId() } }); } catch {}
+    }
+
+    const chatBox = document.getElementById("chatBox");
+    const aiWrap = document.getElementById("aiWrap");
+
+    document.querySelector(".chat-tabs").addEventListener("click", e => {
+      const b = e.target.closest(".chat-tab"); if (!b) return;
+      tab = b.dataset.tab;
+      document.querySelectorAll(".chat-tab").forEach(x => x.classList.toggle("active", x === b));
+      if (tab === "ai") {
+        chatBox.hidden = true; aiWrap.hidden = false;
+        if (!aiWrap.dataset.init) { aiWrap.innerHTML = buildBizAiShell(); initBizAi(); aiWrap.dataset.init = "1"; }
+        return;
+      }
+      chatBox.hidden = false; aiWrap.hidden = true;
+      lastSig = "";                 // force re-render for the newly selected chat
+      renderHead(); loadStream();
+    });
+
+    boot();
+    renderHead();
+    loadStream();
+    initComposer({ input:"chInput", send:"chSend", attach:"chAttach", file:"chFile", mic:"chMic",
+      getChat: chatId, reload: () => loadStream(true),
+      stream: "stream", meName: ME, isGroup: () => tab === "group" });
+    initMessageActions("stream", loadStream);
+    setInterval(() => { if (tab !== "ai") loadStream(); }, 3000);   // live delivery + read-receipts
+    document.addEventListener("langchange", renderHead);
+  </script>
+</body>
+</html>

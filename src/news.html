@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Konglomerat — News</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="header"></div>
+
+  <section class="detail-wrap">
+    <div class="container">
+      <div class="crumb">
+        <a href="index.html">Konglomerat</a>
+        <span class="sep">/</span>
+        <a href="index.html#news" data-i18n="news.back">Новости</a>
+        <span class="sep">/</span>
+        <strong id="crumbName">…</strong>
+      </div>
+      <div id="articleRoot"></div>
+    </div>
+  </section>
+
+  <script src="js/main.js"></script>
+  <script>
+    document.getElementById("header").innerHTML = buildHeader({
+      root: "",
+      nav: `<a href="index.html#about" data-i18n="nav.about">О нас</a>
+            <a href="index.html#showrooms" data-i18n="nav.showrooms">Шоурумы</a>
+            <a href="index.html#news" class="active" data-i18n="nav.news">Новости</a>
+            <a href="assistant.html" data-i18n="nav.ai">AI-ассистент</a>`
+    });
+
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;" }[c]));
+    const root = document.getElementById("articleRoot");
+    const id = new URLSearchParams(location.search).get("id");
+    const pick = (o) => o ? (o[K.lang] || o.ru || o.en || "") : "";
+
+    async function load() {
+      let n = null, all = [];
+      try { n = await api("/api/news/" + encodeURIComponent(id)); } catch {}
+      if (!n) {
+        document.getElementById("crumbName").textContent = "—";
+        root.innerHTML = `<div class="panel" style="padding:40px;text-align:center">
+          <p class="muted" data-i18n="news.notfound">Новость не найдена.</p>
+          <a class="btn btn-primary mt-2" href="index.html#news" data-i18n="news.back">Новости</a></div>`;
+        translateTree(root); return;
+      }
+      try { all = await api("/api/news"); } catch {}
+
+      const title = pick(n.title);
+      document.getElementById("crumbName").textContent = title;
+      document.title = "Konglomerat — " + title;
+
+      // body: array of paragraphs (localized) or fall back to the short text
+      const paras = (n.body && (n.body[K.lang] || n.body.ru)) || (pick(n.text) ? [pick(n.text)] : []);
+      const bodyHTML = paras.map((p, i) => `<p class="${i===0?'lead':''}">${esc(p)}</p>`).join("");
+
+      const imgs = (n.images && n.images.length) ? n.images : (n.image ? [n.image] : []);
+      const extraHTML = imgs.length > 1
+        ? `<div class="attach-grid article-gallery">${imgs.slice(1).map(s => `<a class="attach-item view" href="${s}" target="_blank" rel="noopener"><img src="${s}" alt=""></a>`).join("")}</div>`
+        : "";
+
+      const more = all.filter(x => x.id !== n.id).slice(0, 3);
+      const moreHTML = more.length ? `
+        <div class="article-more">
+          <h3 data-i18n="news.more">Другие новости</h3>
+          <div class="grid cols-3">
+            ${more.map(m => `
+              <a class="card news-item" href="news.html?id=${m.id}">
+                <div class="news-ico">${icon("newspaper", 22)}</div>
+                <div>
+                  <span class="product-company">${esc(m.company)}</span>
+                  <h4>${esc(pick(m.title))}</h4>
+                  <time>${esc(m.date)}</time>
+                </div>
+              </a>`).join("")}
+          </div>
+        </div>` : "";
+
+      root.innerHTML = `
+        <article class="article">
+          <span class="eyebrow">${esc(n.company)}</span>
+          <h1>${esc(title)}</h1>
+          <div class="article-meta">
+            <span class="who">${esc(n.company)}</span>
+            <span>${ig("calendar")} ${esc(n.date)}</span>
+            <span data-i18n="news.published">Опубликовано</span>
+          </div>
+          <div class="article-banner">${imgs.length ? `<img class="article-banner-img" src="${imgs[0]}" alt="">` : icon("newspaper", 90)}</div>
+          <div class="article-body">${bodyHTML}</div>
+          ${extraHTML}
+          <a class="btn btn-ghost mt-3" href="index.html#news">← <span data-i18n="news.back">Новости</span></a>
+        </article>
+        ${moreHTML}`;
+      translateTree(root);
+      renderIcons(root);
+    }
+
+    boot();
+    load();
+    document.addEventListener("langchange", load);
+  </script>
+</body>
+</html>

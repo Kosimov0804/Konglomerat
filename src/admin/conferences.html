@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Konglomerat — Conferences</title>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+  <div id="header"></div>
+
+  <div class="app-shell">
+    <aside class="sidebar" id="side"></aside>
+
+    <main class="workspace">
+      <div class="page-title">
+        <div>
+          <h1 data-i18n="conf.title">Управление конференциями</h1>
+          <div class="sub" data-i18n="conf.sub">Создавайте онлайн-встречи для 30 компаний.</div>
+        </div>
+      </div>
+
+      <div class="grid cols-2" style="align-items:start">
+        <!-- create form -->
+        <div class="panel">
+          <div class="panel-head"><h3 data-i18n="control.confTitle">Создание конференции</h3></div>
+          <div class="panel-body">
+            <form id="confForm">
+              <div class="form-group">
+                <label data-i18n="conf.name">Название конференции</label>
+                <input id="cName" class="form-control" required placeholder="Q3 Strategy" />
+              </div>
+              <div class="grid cols-2">
+                <div class="form-group">
+                  <label data-i18n="conf.date">Дата</label>
+                  <input id="cDate" class="form-control" type="date" required />
+                </div>
+                <div class="form-group">
+                  <label data-i18n="conf.time">Время</label>
+                  <input id="cTime" class="form-control" type="time" required />
+                </div>
+              </div>
+              <div class="form-group">
+                <label data-i18n="conf.link">Ссылка на конференцию (Zoom/Meet)</label>
+                <input id="cLink" class="form-control" type="url" placeholder="https://meet.google.com/..." />
+              </div>
+              <div class="form-group">
+                <label data-i18n="conf.desc">Описание</label>
+                <textarea id="cDesc" class="form-control" placeholder="..."></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary btn-block" data-i18n="conf.launch">Запустить</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- upcoming list -->
+        <div class="panel">
+          <div class="panel-head">
+            <h3 data-i18n="conf.upcoming">Запланированные встречи</h3>
+            <span class="tag" id="confCount">2</span>
+          </div>
+          <div class="panel-body" id="confList"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/main.js"></script>
+  <script>
+    requireRole("admin");
+    document.getElementById("header").innerHTML = buildHeader({
+      root: "../", nav: "",
+      right: `<button class="btn btn-soft btn-sm" onclick="logout()" data-i18n="btn.logout">Выйти</button>`
+    });
+    document.getElementById("side").innerHTML = buildAdminSidebar("conferences");
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;" }[c]));
+
+    let CONFS = [];
+    async function renderConfs() {
+      const L = K.lang;
+      const join = L==='uz'?'Qo\'shilish':L==='en'?'Join':'Войти';
+      try { CONFS = await api("/api/conferences"); } catch { CONFS = []; }
+      document.getElementById("confList").innerHTML = CONFS.map(c => `
+        <div class="list-row">
+          <div class="avatar">${icon("video", 20)}</div>
+          <div class="grow">
+            <b>${esc(c.name)}</b>
+            <small>${ig("calendar")} ${esc(c.date)} · ${ig("clock")} ${esc(c.time)} · ${ig("users")} ${c.joined} / ${c.total}</small>
+            ${c.link ? `<a class="conf-link" href="${esc(c.link)}" target="_blank" rel="noopener">${ig("globe")} ${esc(c.link)}</a>` : ""}
+          </div>
+          <button class="btn btn-primary btn-sm" ${c.joined>=c.total?'disabled':''} onclick="joinConf('${c.id}')">${join}</button>
+        </div>`).join("");
+      document.getElementById("confCount").textContent = CONFS.length;
+    }
+    async function joinConf(id) {
+      const c = CONFS.find(x => x.id === id);
+      if (c && c.link) window.open(c.link, "_blank", "noopener");   // open the meeting
+      try { await api("/api/conferences/" + id + "/join", { method:"POST" }); renderConfs();
+        toast(t("side.conferences"), t("co.joinBtn"), "success"); } catch { toast(t("login.err.title"), "", "error"); }
+    }
+
+    document.getElementById("confForm").addEventListener("submit", async e => {
+      e.preventDefault();
+      try {
+        await api("/api/conferences", { method:"POST", body:{
+          name: document.getElementById("cName").value || "Conference",
+          date: document.getElementById("cDate").value || "",
+          time: document.getElementById("cTime").value || "",
+          link: document.getElementById("cLink").value || "",
+          desc: document.getElementById("cDesc").value || "",
+        }});
+        e.target.reset();
+        renderConfs();
+        toast(t("control.confTitle"), t("conf.created"), "success");
+      } catch { toast(t("login.err.title"), "", "error"); }
+    });
+
+    boot();
+    renderConfs();
+    document.addEventListener("langchange", renderConfs);
+  </script>
+</body>
+</html>

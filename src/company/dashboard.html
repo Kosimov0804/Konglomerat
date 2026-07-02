@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Konglomerat — Company Workspace</title>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+  <div id="header"></div>
+
+  <div class="app-shell">
+    <aside class="sidebar" id="side"></aside>
+
+    <main class="workspace">
+      <div class="page-title">
+        <div>
+          <h1 data-i18n="co.title">Рабочее пространство</h1>
+          <div class="sub" data-i18n="co.sub">ООО «Олтин Сарой» — управление бизнесом</div>
+        </div>
+        <span class="tag green">● ONLINE</span>
+      </div>
+
+      <div class="notify-banner" id="joinBanner">
+        <div class="nb-ico" data-icon="video" data-icon-size="26" style="color:var(--gold)"></div>
+        <div class="grow">
+          <b data-i18n="co.join">Директор создал новую конференцию!</b>
+          <div class="muted" style="font-size:.85rem" id="joinMeta">—</div>
+        </div>
+        <button class="btn btn-primary" id="joinBtn" data-i18n="co.joinBtn">Join Conference</button>
+      </div>
+
+      <div class="grid cols-4 mt-3">
+        <a class="card" href="content.html">
+          <div class="card-ico" data-icon="bag"></div>
+          <h3 data-i18n="co.content">Управление контентом</h3>
+          <p class="muted mt-1" data-i18n="co.addProduct">Добавить товар</p>
+        </a>
+        <a class="card" href="report.html">
+          <div class="card-ico" data-icon="file"></div>
+          <h3 data-i18n="co.myReport">Мой отчёт</h3>
+          <p class="muted mt-1" data-i18n="co.reportDesc">Индивидуальный месячный отчёт.</p>
+        </a>
+        <a class="card" href="chats.html">
+          <div class="card-ico" data-icon="message"></div>
+          <h3 data-i18n="side.chats">Чаты</h3>
+          <p class="muted mt-1" data-i18n="chat.groupWho">31 участник · Админ + 30 компаний</p>
+        </a>
+        <a class="card" href="rnd.html">
+          <div class="card-ico" data-icon="flask"></div>
+          <h3 data-i18n="side.rnd">R&D центр</h3>
+          <p class="muted mt-1" data-i18n="rnd.subCo">Подавайте стартап-проекты.</p>
+        </a>
+      </div>
+
+      <!-- Buyer requests (visitors who ordered this company's products) -->
+      <div class="panel mt-3">
+        <div class="panel-head">
+          <div><h3 data-i18n="co.orders">Заявки покупателей</h3><div class="sub" data-i18n="co.ordersSub" style="font-size:.85rem;color:var(--text-dim)">Посетители, заинтересовавшиеся вашими товарами, и их контакты.</div></div>
+          <span class="tag" id="ordCount">0</span>
+        </div>
+        <div class="panel-body" id="ordersBody"></div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/main.js"></script>
+  <script>
+    requireRole("company");
+    document.getElementById("header").innerHTML = buildHeader({
+      root: "../", nav: "",
+      right: `<button class="btn btn-soft btn-sm" onclick="logout()" data-i18n="btn.logout">Выйти</button>`
+    });
+    document.getElementById("side").innerHTML = buildCompanySidebar("workspace");
+
+    // upcoming conference banner
+    let upcoming = null;
+    async function loadConf() {
+      const banner = document.getElementById("joinBanner");
+      try {
+        const confs = await api("/api/conferences");
+        if (confs.length) {
+          upcoming = confs[0];
+          document.getElementById("joinMeta").innerHTML =
+            `${upcoming.name} · ${ig("calendar")} ${upcoming.date} · ${ig("clock")} ${upcoming.time}`
+            + (upcoming.link ? `<br><a class="conf-link" href="${upcoming.link}" target="_blank" rel="noopener">${ig("globe")} ${upcoming.link}</a>` : "");
+        } else { banner.style.display = "none"; }
+      } catch { banner.style.display = "none"; }
+    }
+    document.getElementById("joinBtn").addEventListener("click", async () => {
+      if (!upcoming) return;
+      if (upcoming.link) window.open(upcoming.link, "_blank", "noopener");   // open the meeting
+      try { await api("/api/conferences/" + upcoming.id + "/join", { method:"POST" }); toast("Conference", upcoming.name + " ✓", "success"); }
+      catch { toast(t("login.err.title"), "", "error"); }
+    });
+
+    // buyer requests (orders for this company's products) — expandable rows with full details
+    function contactHref(c) {
+      c = String(c || "");
+      return /@/.test(c) ? "mailto:" + c : ("tel:" + c.replace(/[^\d+]/g, ""));
+    }
+    function orderRow(o, L) {
+      const pname = (o.product && o.product.name && (o.product.name[L] || o.product.name.ru)) || "";
+      const price = (o.product && o.product.price) || "";
+      const contact = o.customer.contact || "";
+      const when = (o.at || "").replace("T", " ").slice(0, 16);
+      const cell = (k, v) => `<div><span class="or-k" data-i18n="${k}"></span><span class="or-v">${v}</span></div>`;
+      return `<div class="order-row" data-id="${escHtml(o.id)}">
+        <div class="or-head">
+          <div class="avatar">${o.product && o.product.ico ? escHtml(o.product.ico) : icon("cart", 18)}</div>
+          <div class="grow"><b>${escHtml(o.customer.name)}</b><small>${escHtml(contact)} · ${escHtml(pname)}${o.qty > 1 ? " ×" + o.qty : ""}</small></div>
+          <span class="tag">${escHtml((o.at || "").slice(0, 10))}</span>
+          <span class="or-caret">${icon("chevronLeft", 16)}</span>
+        </div>
+        <div class="or-detail" hidden>
+          <div class="or-grid">
+            ${cell("co.oProduct", escHtml(pname) + (price ? " · " + escHtml(price) : ""))}
+            ${cell("co.oQty", String(o.qty))}
+            ${cell("co.oBuyer", escHtml(o.customer.name))}
+            ${cell("co.oContact", `<a href="${contactHref(contact)}">${escHtml(contact)}</a>`)}
+            ${cell("co.oDate", escHtml(when))}
+          </div>
+        </div>
+      </div>`;
+    }
+    async function loadOrders() {
+      let list = [];
+      try { list = await api("/api/orders"); } catch {}
+      const L = K.lang, body = document.getElementById("ordersBody");
+      document.getElementById("ordCount").textContent = list.length;
+      body.innerHTML = list.length ? list.map(o => orderRow(o, L)).join("")
+        : `<p class="muted" data-i18n="co.ordersEmpty">Пока нет заявок.</p>`;
+      translateTree(body);
+      // if arrived from a notification (?order=id) — open, scroll to and flash that request
+      const target = new URLSearchParams(location.search).get("order");
+      if (target) {
+        const row = body.querySelector(`.order-row[data-id="${CSS.escape(target)}"]`);
+        if (row) {
+          row.classList.add("open", "flash");
+          row.querySelector(".or-detail").hidden = false;
+          row.scrollIntoView({ behavior: "smooth", block: "center" });
+          setTimeout(() => row.classList.remove("flash"), 2000);
+        }
+      }
+    }
+    // click a request to expand / collapse its details
+    document.getElementById("ordersBody").addEventListener("click", e => {
+      if (e.target.closest("a")) return;                 // let contact links work
+      const head = e.target.closest(".or-head"); if (!head) return;
+      const row = head.closest(".order-row");
+      const det = row.querySelector(".or-detail");
+      const open = det.hidden;
+      det.hidden = !open; row.classList.toggle("open", open);
+    });
+
+    boot();
+    loadConf();
+    loadOrders();
+    document.addEventListener("langchange", () => { loadConf(); loadOrders(); });
+  </script>
+</body>
+</html>
