@@ -81,7 +81,7 @@ const I18N = {
     "contact.phone": "Telefon",
     "contact.email": "Elektron pochta",
     "contact.office": "Bosh ofis",
-    "contact.office.v": "Toshkent, Innovatsiya ko'chasi 1",
+    "contact.office.v": "Toshkent shahri, Shayxontohur tumani, Furqat ko'chasi, 1A-uy.",
 
     "ai.title": "AI Yordamchi",
     "ai.guestLimit": "3 ta bepul so'rov mavjud",
@@ -376,7 +376,7 @@ const I18N = {
     "contact.phone": "Телефон",
     "contact.email": "Эл. почта",
     "contact.office": "Главный офис",
-    "contact.office.v": "Ташкент, ул. Инноваций 1",
+    "contact.office.v": "г. Ташкент, Шайхантахурский район, ул. Фурката, 1А",
 
     "ai.title": "AI-ассистент",
     "ai.guestLimit": "Доступно 3 бесплатных запроса",
@@ -669,7 +669,7 @@ const I18N = {
     "contact.phone": "Phone",
     "contact.email": "Email",
     "contact.office": "Head office",
-    "contact.office.v": "Tashkent, Innovation St. 1",
+    "contact.office.v": "Tashkent, Shaykhontokhur district, Furqat street, 1A",
 
     "ai.title": "AI Assistant",
     "ai.guestLimit": "3 free requests available",
