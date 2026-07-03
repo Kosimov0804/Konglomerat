@@ -13,7 +13,6 @@
   <!-- HERO -->
   <section class="hero" id="top">
     <div class="container">
-      <span class="eyebrow" data-i18n="hero.eyebrow">30 компаний · 1 платформа</span>
       <h1>
         <span data-i18n="hero.title1">Национальный</span>
         <span class="grad" data-i18n="hero.title2">Konglomerat</span><br />
@@ -65,7 +64,7 @@
       <span class="eyebrow" data-i18n="show.eyebrow">Шоурумы</span>
       <h2 data-i18n="show.title">Каталог товаров</h2>
       <p class="section-sub" data-i18n="show.sub">Интерактивный каталог продукции компаний.</p>
-      <div class="grid cols-4 mt-3" id="showroomGrid"></div>
+      <div class="grid cols-4 mt-3 market-grid" id="showroomGrid"></div>
     </div>
   </section>
 
@@ -125,11 +124,13 @@
       root: "",
       nav: `<a href="#about" data-i18n="nav.about">О нас</a>
             <a href="#showrooms" data-i18n="nav.showrooms">Шоурумы</a>
+            <a href="favorites.html" class="nav-fav"><span data-i18n="nav.favorites">Избранное</span> <span class="fav-badge" hidden></span></a>
             <a href="#news" data-i18n="nav.news">Новости</a>
             <a href="#contact" data-i18n="nav.contact">Контакты</a>
             <a href="assistant.html" data-i18n="nav.ai">AI-ассистент</a>
             <a href="complaint.html" data-i18n="comp.link">Жалоба</a>`
     });
+    updateFavBadge();
 
     // demo data
     const PRODUCTS = [
@@ -170,19 +171,7 @@
 
     function renderShowrooms() {
       const L = K.lang;
-      document.getElementById("showroomGrid").innerHTML = SHOWROOM.map(p => `
-        <div class="card product-card">
-          <div class="product-thumb">${p.image?`<img class="prod-img" src="${p.image}" alt="">`:icon("package", 42)}</div>
-          <div class="product-body">
-            <div class="product-company">${p.company}</div>
-            <h4>${p.name[L]||p.name.ru||""}</h4>
-            <p class="product-desc">${(p.desc&&(p.desc[L]||p.desc.ru))||""}</p>
-            <div class="product-foot">
-              <span class="price">${p.price}</span>
-              <a class="btn btn-soft btn-sm" href="product.html?id=${p.id||''}">${L==='uz'?"Batafsil":L==='en'?"Details":"Подробнее"}</a>
-            </div>
-          </div>
-        </div>`).join("");
+      document.getElementById("showroomGrid").innerHTML = SHOWROOM.map(p => productCardHTML(p, L)).join("");
     }
     function renderNews() {
       const L = K.lang;
@@ -204,10 +193,16 @@
       renderShowrooms(); renderNews();
     }
 
+    // heart clicks: toggle favorite (asks for email on first use)
+    bindFavClicks(document.getElementById("showroomGrid"));
+    // re-render hearts whenever the visitor signs in / their favorites change
+    document.addEventListener("favschange", renderShowrooms);
+
     boot();
     renderShowrooms();
     renderNews();
     loadData();
+    loadFavs();   // pull this visitor's saved favorites (if signed in) → refresh hearts + badge
     document.addEventListener("langchange", () => { renderShowrooms(); renderNews(); });
   </script>
 </body>

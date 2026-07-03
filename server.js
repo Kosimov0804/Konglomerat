@@ -133,6 +133,7 @@ function seed() {
     ],
     products, news, conferences, complaints, rnd, messages, modules,
     aiUsage: {}, // { visitorId: count }
+    favorites: {}, // { email: [productId, ...] } — per-visitor saved products
     reports: [],
     orders: [],
     notifications: [], // { id, audience:'admin'|'company', title:{uz,ru,en}, text, at, readBy:[] }
@@ -152,6 +153,7 @@ function load() {
       if (!DB.orders) DB.orders = [];        // migrate older db files
       if (!DB.aiUsage) DB.aiUsage = {};
       if (!DB.notifications) DB.notifications = [];
+      if (!DB.favorites) DB.favorites = {};
       return;
     } catch { /* fall through to reseed */ }
   }
@@ -464,6 +466,23 @@ async function api(req, res, urlPath) {
       complaints: DB.complaints.filter(c => c.status === "pending").length,
       conferences: DB.conferences.length,
     });
+  }
+
+  /* favorites — per visitor, identified by email (public, no login required) */
+  if (p === "/api/favorites" && method === "GET") {
+    const email = String(q.get("email") || "").trim().toLowerCase();
+    if (!email) return sendJSON(res, 400, { error:"email_required" });
+    return sendJSON(res, 200, { ids: DB.favorites[email] || [] });
+  }
+  if (p === "/api/favorites" && method === "PUT") {
+    const email = String(body.email || "").trim().toLowerCase();
+    if (!email || !email.includes("@")) return sendJSON(res, 400, { error:"email_required" });
+    const ids = Array.isArray(body.ids)
+      ? [...new Set(body.ids.filter(x => typeof x === "string"))].slice(0, 500)
+      : [];
+    DB.favorites[email] = ids;
+    save();
+    return sendJSON(res, 200, { ids });
   }
 
   /* products */

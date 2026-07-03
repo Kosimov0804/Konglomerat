@@ -28,9 +28,11 @@
       root: "",
       nav: `<a href="index.html#about" data-i18n="nav.about">О нас</a>
             <a href="index.html#showrooms" data-i18n="nav.showrooms">Шоурумы</a>
+            <a href="favorites.html" class="nav-fav"><span data-i18n="nav.favorites">Избранное</span> <span class="fav-badge" hidden></span></a>
             <a href="index.html#news" class="active" data-i18n="nav.news">Новости</a>
             <a href="assistant.html" data-i18n="nav.ai">AI-ассистент</a>`
     });
+    updateFavBadge();
 
     const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;" }[c]));
     const root = document.getElementById("articleRoot");

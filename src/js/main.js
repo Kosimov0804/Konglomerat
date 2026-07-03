@@ -15,6 +15,19 @@ const I18N = {
     "nav.news": "Yangiliklar",
     "nav.contact": "Aloqa",
     "nav.ai": "AI yordamchi",
+    "nav.favorites": "Saralangan",
+    "fav.title": "Saralangan mahsulotlar",
+    "fav.sub": "Siz yoqtirgan mahsulotlar shu yerda saqlanadi.",
+    "fav.empty": "Hozircha saralangan mahsulot yo'q.",
+    "fav.emptyHint": "Katalogdagi mahsulotlarda ❤ belgisini bosing.",
+    "fav.browse": "Katalogga o'tish",
+    "fav.signinTitle": "Email orqali kiring",
+    "fav.signinSub": "Saralanganlaringiz shu email'ga bog'lanadi va istalgan qurilmada ochiladi.",
+    "fav.signinOk": "Kirish",
+    "fav.switch": "Emailni almashtirish",
+    "fav.badEmail": "To'g'ri email kiriting",
+    "fav.signedin": "Xush kelibsiz",
+    "fav.signedAs": "Siz kirdingiz:",
     "btn.login": "Akkauntga kirish",
     "btn.logout": "Chiqish",
     "notif.title": "Bildirishnomalar",
@@ -23,7 +36,7 @@ const I18N = {
     "hero.eyebrow": "30 kompaniya · 1 platforma",
     "hero.title1": "Milliy",
     "hero.title2": "Konglomerat",
-    "hero.title3": "sun'iy intellekt boshqaruvida",
+    "hero.title3": "AI boshqaruvida",
     "hero.lead": "Direktor boshqaruvidagi 30 kompaniyani birlashtiruvchi yagona ekotizim. Shourumlar, investitsiyalar, R&D, eksport va analitika — barchasi bir joyda.",
     "hero.cta1": "Platformaga kirish",
     "hero.cta2": "Shourumlarni ko'rish",
@@ -297,6 +310,19 @@ const I18N = {
     "nav.news": "Новости",
     "nav.contact": "Контакты",
     "nav.ai": "AI-ассистент",
+    "nav.favorites": "Избранное",
+    "fav.title": "Избранные товары",
+    "fav.sub": "Товары, которые вы отметили, сохраняются здесь.",
+    "fav.empty": "Пока нет избранных товаров.",
+    "fav.emptyHint": "Нажмите ❤ на товаре в каталоге, чтобы добавить.",
+    "fav.browse": "Перейти в каталог",
+    "fav.signinTitle": "Войдите по email",
+    "fav.signinSub": "Избранное привяжется к этому email и откроется на любом устройстве.",
+    "fav.signinOk": "Войти",
+    "fav.switch": "Сменить email",
+    "fav.badEmail": "Введите корректный email",
+    "fav.signedin": "Добро пожаловать",
+    "fav.signedAs": "Вы вошли как:",
     "btn.login": "Войти в аккаунт",
     "btn.logout": "Выйти",
     "notif.title": "Уведомления",
@@ -577,6 +603,19 @@ const I18N = {
     "nav.news": "News",
     "nav.contact": "Contact",
     "nav.ai": "AI Assistant",
+    "nav.favorites": "Favorites",
+    "fav.title": "Favorite products",
+    "fav.sub": "The products you liked are saved here.",
+    "fav.empty": "No favorite products yet.",
+    "fav.emptyHint": "Tap the ❤ on a product in the catalog to add it.",
+    "fav.browse": "Go to catalog",
+    "fav.signinTitle": "Sign in with email",
+    "fav.signinSub": "Your favorites are tied to this email and open on any device.",
+    "fav.signinOk": "Sign in",
+    "fav.switch": "Switch email",
+    "fav.badEmail": "Enter a valid email",
+    "fav.signedin": "Welcome",
+    "fav.signedAs": "Signed in as:",
     "btn.login": "Log in",
     "btn.logout": "Log out",
     "notif.title": "Notifications",
@@ -928,6 +967,8 @@ const ICONS = {
   bookmark:`<path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2Z"/>`,
   check:`<path d="M20 6 9 17l-5-5"/>`,
   cart:`<circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>`,
+  heart:`<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"/>`,
+  star:`<path d="M11.5 2.7a.55.55 0 0 1 1 0l2.4 5 5.4.8a.55.55 0 0 1 .3.9l-3.9 3.8.9 5.4a.55.55 0 0 1-.8.6l-4.8-2.5-4.8 2.5a.55.55 0 0 1-.8-.6l.9-5.4-3.9-3.8a.55.55 0 0 1 .3-.9l5.4-.8Z"/>`,
   chevronLeft:`<path d="m15 18-6-6 6-6"/>`,
   bell:`<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>`,
   paperclip:`<path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/>`,
@@ -965,9 +1006,16 @@ function translateTree(root) {
     el.setAttribute("placeholder", t(el.getAttribute("data-i18n-ph")));
   });
 }
+// Highlight the "AI" / "ИИ" word in the hero title with the accent colour (all languages).
+function highlightHeroAI() {
+  const el = document.querySelector('[data-i18n="hero.title3"]');
+  if (!el) return;
+  el.innerHTML = el.textContent.replace(/(^|\s)(AI|ИИ)(?=\s|$)/, '$1<span class="hl-ai">$2</span>');
+}
 function applyLang() {
   document.documentElement.lang = K.lang;
   translateTree(document);
+  highlightHeroAI();
   document.querySelectorAll(".lang-switch button").forEach(b => {
     b.classList.toggle("active", b.dataset.lang === K.lang);
   });
@@ -1036,6 +1084,121 @@ function buildHeader(opts = {}) {
       </div>
     </div>
   </header>`;
+}
+
+/* ----------------------------------------------------------
+   4a1. Favorites — per visitor, identified by email, synced to the server.
+   The visitor "signs in" with an email; their favorites follow that email
+   (localStorage caches the list for instant paint; the server is the source
+   of truth so the same email sees the same favorites on any device).
+   Shared by the catalog (index) and the Favorites page.
+   ---------------------------------------------------------- */
+function visitorEmail() { return (localStorage.getItem("kg_visitor_email") || "").trim().toLowerCase(); }
+function setVisitorEmail(email) {
+  localStorage.setItem("kg_visitor_email", String(email || "").trim().toLowerCase());
+  _favs = null; // drop cache so the new identity's list loads
+}
+function clearVisitor() { localStorage.removeItem("kg_visitor_email"); _favs = null; updateFavBadge(); _emitFavs(); }
+function _favCacheKey() { const e = visitorEmail(); return "kg_favs:" + (e || "_guest"); }
+
+let _favs = null; // in-memory cache of the current visitor's favorite keys
+function favKey(p) { return String(p.id || ((p.company || "") + "|" + ((p.name && (p.name.ru || p.name.en)) || ""))); }
+function getFavs() {
+  if (_favs) return _favs;
+  try { _favs = JSON.parse(localStorage.getItem(_favCacheKey()) || "[]"); } catch { _favs = []; }
+  return _favs;
+}
+function _setFavs(arr) { _favs = arr.slice(); localStorage.setItem(_favCacheKey(), JSON.stringify(_favs)); }
+function isFav(key) { return getFavs().includes(key); }
+function favCount() { return getFavs().length; }
+function _emitFavs() { document.dispatchEvent(new Event("favschange")); }
+function toggleFav(key) {
+  const f = getFavs().slice(), i = f.indexOf(key), on = i < 0;
+  if (on) f.push(key); else f.splice(i, 1);
+  _setFavs(f);
+  updateFavBadge();
+  const email = visitorEmail();
+  if (email) api("/api/favorites", { method: "PUT", body: { email, ids: f } }).catch(() => {});
+  _emitFavs();
+  return on; // true = теперь в избранном
+}
+// Pull the current visitor's favorites from the server (call on page load / after sign-in).
+async function loadFavs() {
+  _favs = null;
+  const email = visitorEmail();
+  if (email) {
+    try { const r = await api("/api/favorites?email=" + encodeURIComponent(email));
+      if (Array.isArray(r.ids)) _setFavs(r.ids); } catch {}
+  }
+  getFavs(); updateFavBadge(); _emitFavs();
+  return getFavs();
+}
+// Ask a guest for their email (styled modal) so favorites can be saved to their account.
+async function ensureVisitor() {
+  if (visitorEmail()) return true;
+  const email = await uiPrompt({
+    title: t("fav.signinTitle"),
+    placeholder: "email@example.com",
+    ok: t("fav.signinOk"), cancel: t("co.cancel"),
+  });
+  if (email === null) return false;                 // cancelled
+  if (!email.includes("@")) { toast(t("fav.badEmail"), "", "error"); return false; }
+  setVisitorEmail(email);
+  await loadFavs();
+  toast(t("fav.signedin"), visitorEmail(), "success");
+  return true;
+}
+// Refresh any "Избранное" nav counter present on the page.
+function updateFavBadge() {
+  document.querySelectorAll(".fav-badge").forEach(b => {
+    const c = favCount(); b.textContent = c; b.hidden = !c;
+  });
+}
+// Show the "Избранное" nav tab only while a visitor is signed in (has an email).
+function syncFavAuth() {
+  if (document.body) document.body.classList.toggle("fav-auth", !!visitorEmail());
+}
+// Keep the nav tab + badge in sync whenever the visitor signs in / out or their list changes.
+document.addEventListener("favschange", () => { updateFavBadge(); syncFavAuth(); });
+// Marketplace-style product card (identical on catalog and Favorites pages).
+function productCardHTML(p, L = K.lang) {
+  const detailsLbl = L === "uz" ? "Batafsil" : L === "en" ? "Details" : "Подробнее";
+  const k = favKey(p);
+  const name = (p.name && (p.name[L] || p.name.ru || p.name.en)) || "";
+  const desc = (p.desc && (p.desc[L] || p.desc.ru || p.desc.en)) || "";
+  const media = p.image ? `<img class="prod-img" src="${escHtml(p.image)}" alt="">`
+    : (p.ico ? `<span class="prod-emoji">${p.ico}</span>` : icon("package", 42));
+  return `
+    <a class="card product-card" href="product.html?id=${p.id || ""}">
+      <div class="product-thumb">
+        ${media}
+        <button type="button" class="fav-btn${isFav(k) ? " on" : ""}" data-fav="${escHtml(k)}" aria-pressed="${isFav(k)}" aria-label="Favorite">${icon("heart", 18)}</button>
+      </div>
+      <div class="product-body">
+        <span class="price">${escHtml(p.price || "")}</span>
+        <div class="product-company">${escHtml(p.company || "")}</div>
+        <h4 class="product-name">${escHtml(name)}</h4>
+        <p class="product-desc">${escHtml(desc)}</p>
+        <span class="btn btn-soft btn-sm btn-block product-cta">${detailsLbl}</span>
+      </div>
+    </a>`;
+}
+// Delegate heart clicks on a product grid: toggle favorite without following the card link.
+// Requires the visitor to be signed in with an email first (favorites are per-visitor).
+// Re-rendering is driven by the "favschange" event, so callers just re-render their grid there.
+function bindFavClicks(grid) {
+  if (!grid) return;
+  grid.addEventListener("click", async e => {
+    const btn = e.target.closest(".fav-btn");
+    if (!btn) return;
+    e.preventDefault(); e.stopPropagation();
+    const key = btn.dataset.fav;
+    if (!visitorEmail()) {
+      if (!(await ensureVisitor())) return;   // sign in first; loadFavs() re-renders grids
+      if (isFav(key)) return;                 // this item was already in their saved list
+    }
+    toggleFav(key);                           // updates + emits "favschange" → grids re-render
+  });
 }
 
 /* ----------------------------------------------------------
@@ -1970,6 +2133,7 @@ function boot() {
   localizeValidation();
   initMobileNav();
   initLightbox();
+  syncFavAuth();   // show/hide the "Избранное" tab based on sign-in state
 }
 document.addEventListener("DOMContentLoaded", boot);
 

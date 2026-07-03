@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Konglomerat — Избранное</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="header"></div>
+
+  <section class="section">
+    <div class="container">
+      <span class="eyebrow" data-i18n="nav.favorites">Избранное</span>
+      <h2 data-i18n="fav.title">Избранные товары</h2>
+      <p class="section-sub" data-i18n="fav.sub">Товары, которые вы отметили, сохраняются здесь.</p>
+      <div id="favRoot" class="mt-3"></div>
+    </div>
+  </section>
+
+  <script src="js/main.js"></script>
+  <script>
+    document.getElementById("header").innerHTML = buildHeader({
+      root: "",
+      nav: `<a href="index.html#about" data-i18n="nav.about">О нас</a>
+            <a href="index.html#showrooms" data-i18n="nav.showrooms">Шоурумы</a>
+            <a href="favorites.html" class="nav-fav active"><span data-i18n="nav.favorites">Избранное</span> <span class="fav-badge" hidden></span></a>
+            <a href="index.html#news" data-i18n="nav.news">Новости</a>
+            <a href="assistant.html" data-i18n="nav.ai">AI-ассистент</a>`
+    });
+    updateFavBadge();
+
+    const root = document.getElementById("favRoot");
+    let ALL = [];
+
+    // --- not signed in: ask for an email ---
+    function signinHTML() {
+      return `<div class="fav-signin card">
+        <div class="fav-empty-ico">${icon("heart", 44)}</div>
+        <h3 data-i18n="fav.signinTitle">Войдите по email</h3>
+        <p class="muted" data-i18n="fav.signinSub">Избранное привяжется к этому email и откроется на любом устройстве.</p>
+        <form id="favSigninForm">
+          <input id="favEmail" class="form-control" type="email" required autocomplete="email" placeholder="email@example.com" />
+          <button class="btn btn-primary btn-block mt-2" type="submit" data-i18n="fav.signinOk">Войти</button>
+        </form>
+      </div>`;
+    }
+
+    // --- signed in, but nothing saved yet ---
+    function emptyHTML() {
+      return `<div class="fav-empty">
+        <div class="fav-empty-ico">${icon("heart", 48)}</div>
+        <h3 data-i18n="fav.empty">Пока нет избранных товаров.</h3>
+        <p data-i18n="fav.emptyHint">Нажмите ❤ на товаре в каталоге, чтобы добавить.</p>
+        <a class="btn btn-primary mt-2" href="index.html#showrooms" data-i18n="fav.browse">Перейти в каталог</a>
+      </div>`;
+    }
+
+    function visitorBarHTML() {
+      return `<div class="visitor-bar">
+        <span class="who">${ig("mail")} <span data-i18n="fav.signedAs">Вы вошли как:</span> <b>${escHtml(visitorEmail())}</b></span>
+        <button class="btn btn-soft btn-sm" id="favSwitch" data-i18n="fav.switch">Сменить email</button>
+      </div>`;
+    }
+
+    function render() {
+      // gate: no visitor yet → email sign-in form
+      if (!visitorEmail()) {
+        root.innerHTML = signinHTML();
+        translateTree(root); renderIcons(root);
+        document.getElementById("favSigninForm").addEventListener("submit", async e => {
+          e.preventDefault();
+          const email = document.getElementById("favEmail").value.trim();
+          if (!email.includes("@")) { toast(t("fav.badEmail"), "", "error"); return; }
+          setVisitorEmail(email);
+          await loadFavs();                    // → favschange → render() (signed-in view)
+          toast(t("fav.signedin"), visitorEmail(), "success");
+        });
+        return;
+      }
+
+      // signed in → show their list
+      const favs = getFavs();
+      const items = ALL.filter(p => favs.includes(favKey(p)));
+      const bar = visitorBarHTML();
+      root.innerHTML = bar + (items.length
+        ? `<div class="grid cols-4 market-grid" id="favGrid">${items.map(p => productCardHTML(p, K.lang)).join("")}</div>`
+        : emptyHTML());
+      translateTree(root); renderIcons(root);
+      if (items.length) bindFavClicks(document.getElementById("favGrid"));
+      document.getElementById("favSwitch").addEventListener("click", () => clearVisitor()); // → favschange → gate
+    }
+
+    async function load() {
+      try { ALL = await api("/api/products"); } catch { ALL = []; }
+      await loadFavs();   // pull the current visitor's saved list (emits favschange)
+      render();
+    }
+
+    boot();
+    document.addEventListener("favschange", render);
+    load();
+    document.addEventListener("langchange", render);
+  </script>
+</body>
+</html>
