@@ -1244,7 +1244,8 @@ function buildAdminSidebar(active) {
   const items = [
     ["overview",    "control-panel.html", "chart",    "side.overview"],
     ["control",     "control.html",       "sliders",  "side.control"],
-    ["modules",     "modules.html",       "grid",     "side.modules"],
+    // "Modullar" temporarily disabled (2026-07-06) — re-enable by uncommenting.
+    // ["modules",     "modules.html",       "grid",     "side.modules"],
     ["conferences", "conferences.html",   "video",    "side.conferences"],
     ["chats",       "chats.html",         "message",  "side.chats"],
     ["rnd",         "rnd.html",           "flask",    "side.rnd"],
